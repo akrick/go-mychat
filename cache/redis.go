@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"time"
+
 	"akrick.com/mychat/database"
 	"akrick.com/mychat/models"
 	"github.com/redis/go-redis/v9"
@@ -27,7 +29,7 @@ type UserInfoCache struct {
 func InitRedis() error {
 	Rdb = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
-		Password: "",
+		Password: "123456",
 		DB:       0,
 	})
 
@@ -85,7 +87,9 @@ func GetUserInfoWithCache(ctx context.Context, userID uint) (*UserInfoCache, err
 		}
 
 		data, _ := json.Marshal(userInfo)
-		if err := Rdb.Set(ctx, cacheKey, data, 30*time.Minute).Err(); err != nil {
+		// 添加10分钟以内的随机过期时间，防止缓存雪崩
+		ttl := 30*time.Minute + time.Duration(rand.Intn(10))*time.Minute
+		if err := Rdb.Set(ctx, cacheKey, data, ttl).Err(); err != nil {
 			return nil, err
 		}
 
@@ -121,5 +125,7 @@ func RefreshUserCache(ctx context.Context, userID uint) error {
 
 	data, _ := json.Marshal(userInfo)
 	cacheKey := getUserCacheKey(userID)
-	return Rdb.Set(ctx, cacheKey, data, 30*time.Minute).Err()
+	// 添加10分钟以内的随机过期时间，防止缓存雪崩
+	ttl := 30*time.Minute + time.Duration(rand.Intn(10))*time.Minute
+	return Rdb.Set(ctx, cacheKey, data, ttl).Err()
 }
