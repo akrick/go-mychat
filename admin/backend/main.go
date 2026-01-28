@@ -4,6 +4,7 @@ import (
 	"akrick.com/mychat/admin/backend/database"
 	"akrick.com/mychat/admin/backend/handlers"
 	"akrick.com/mychat/admin/backend/middleware"
+	"akrick.com/mychat/admin/backend/websocket"
 	"fmt"
 	"log"
 
@@ -13,6 +14,13 @@ import (
 func main() {
 	// 初始化数据库
 	database.InitDB()
+
+	// 初始化系统配置
+	InitSystemConfigs()
+
+	// 初始化 WebSocket Hub
+	websocket.InitHub()
+	fmt.Println("✅ WebSocket Hub 已初始化")
 
 	// 创建路由
 	r := gin.Default()
@@ -78,21 +86,30 @@ func main() {
 			admin.GET("/chat/messages/search", handlers.SearchChatMessages)
 			admin.DELETE("/chat/sessions/:id", handlers.DeleteChatSession)
 
-			// 财务管理
-			admin.GET("/withdraws/pending", handlers.GetPendingWithdraws)
-			admin.POST("/withdraw/:id/approve", handlers.ApproveWithdraw)
-			admin.GET("/withdraws", handlers.GetWithdrawList)
-			admin.GET("/finance/stats", handlers.GetFinanceStats)
-			admin.GET("/finance/revenue", handlers.GetRevenueReport)
-			admin.GET("/statistics", handlers.GetAdminStatistics)
+		// 财务管理
+		admin.GET("/withdraws/pending", handlers.GetPendingWithdraws)
+		admin.POST("/withdraw/:id/approve", handlers.ApproveWithdraw)
+		admin.POST("/withdraw/:id/transfer", handlers.ConfirmWithdrawTransfer)
+		admin.GET("/withdraws", handlers.GetWithdrawList)
+		admin.GET("/finance/stats", handlers.GetFinanceStats)
+		admin.GET("/finance/revenue", handlers.GetRevenueReport)
+		admin.GET("/finance/reports", handlers.GetFinanceReports)
+		admin.GET("/finance/accounts", handlers.GetCounselorAccountList)
+		admin.GET("/finance/accounts/:id", handlers.GetCounselorAccountDetail)
+		admin.GET("/statistics", handlers.GetAdminStatistics)
 
-			// 系统管理
-			admin.GET("/user/info", handlers.GetAdminUserInfo)
-			admin.GET("/user/permissions", handlers.GetAdminPermissions)
-			admin.POST("/logout", handlers.AdminLogout)
-			admin.GET("/session/stats", handlers.GetSessionStats)
-			admin.GET("/online/users", handlers.GetOnlineUsers)
-			admin.POST("/broadcast", handlers.BroadcastSystemMessage)
+		// 系统管理
+		admin.GET("/user/info", handlers.GetAdminUserInfo)
+		admin.GET("/user/permissions", handlers.GetAdminPermissions)
+		admin.POST("/logout", handlers.AdminLogout)
+		admin.GET("/session/stats", handlers.GetSessionStats)
+		admin.GET("/online/users", handlers.GetOnlineUsers)
+		admin.POST("/broadcast", handlers.BroadcastSystemMessage)
+		admin.GET("/logs", handlers.GetSystemLogs)
+		admin.GET("/configs", handlers.GetSystemConfigs)
+		admin.POST("/configs", handlers.CreateSystemConfig)
+		admin.PUT("/configs/:id", handlers.UpdateSystemConfig)
+		admin.DELETE("/configs/:id", handlers.DeleteSystemConfig)
 
 			// RBAC 权限管理
 			admin.GET("/roles", handlers.GetRoleList)

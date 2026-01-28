@@ -103,6 +103,11 @@ func (h *Hub) Run() {
 
 // HandleWebSocket 处理WebSocket连接
 func HandleWebSocket(c *gin.Context) {
+	if globalHub == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "WebSocket Hub未初始化"})
+		return
+	}
+
 	// 从URL参数获取token
 	token := c.Query("token")
 	if token == "" {
@@ -582,6 +587,10 @@ func (c *Client) sendError(errorMsg string) {
 
 // BroadcastToSession 向指定会话广播消息
 func BroadcastToSession(sessionID uint, message []byte) {
+	if globalHub == nil {
+		return
+	}
+
 	globalHub.mu.RLock()
 	defer globalHub.mu.RUnlock()
 
@@ -597,11 +606,18 @@ func BroadcastToSession(sessionID uint, message []byte) {
 
 // BroadcastToAll 向所有在线用户广播消息
 func BroadcastToAll(message []byte) {
+	if globalHub == nil {
+		return
+	}
 	globalHub.broadcast <- message
 }
 
 // GetOnlineUsers 获取在线用户列表
 func GetOnlineUsers() []uint {
+	if globalHub == nil {
+		return []uint{}
+	}
+
 	globalHub.mu.RLock()
 	defer globalHub.mu.RUnlock()
 
@@ -614,6 +630,10 @@ func GetOnlineUsers() []uint {
 
 // IsUserOnline 检查用户是否在线
 func IsUserOnline(userID uint) bool {
+	if globalHub == nil {
+		return false
+	}
+
 	globalHub.mu.RLock()
 	defer globalHub.mu.RUnlock()
 
@@ -623,6 +643,10 @@ func IsUserOnline(userID uint) bool {
 
 // GetSessionParticipants 获取会话参与者
 func GetSessionParticipants(sessionID uint) []uint {
+	if globalHub == nil {
+		return nil
+	}
+
 	globalHub.mu.RLock()
 	defer globalHub.mu.RUnlock()
 

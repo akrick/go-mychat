@@ -5,6 +5,7 @@ import (
 	"akrick.com/mychat/admin/backend/cache"
 	"akrick.com/mychat/admin/backend/database"
 	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/admin/backend/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -158,10 +159,10 @@ func GetReviewList(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Preload("User").Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&reviews).Error; err != nil {
+	if err := query.Preload("User").Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&reviews).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -314,10 +315,10 @@ func GetUserReviews(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Preload("Counselor").Preload("Order").Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&reviews).Error; err != nil {
+	if err := query.Preload("Counselor").Preload("Order").Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&reviews).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),

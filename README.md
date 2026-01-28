@@ -1,354 +1,289 @@
-# MyChat - 心理咨询聊天平台
+# MyChat 在线咨询系统
 
-基于 SOA 架构的心理咨询聊天系统，采用 Go + Vue.js 技术栈，提供用户与咨询师实时聊天、订单管理、支付结算等功能。
+> 一个完整的在线咨询聊天系统，包含用户端、管理后台和实时通信功能
 
-## 🏗️ 架构概览
+## 🌟 项目简介
 
-本项目采用 **SOA（面向服务架构）**，将系统拆分为独立的服务单元：
+MyChat 是一个功能完整的在线咨询平台，支持用户与咨询师进行实时聊天、订单管理、在线支付等功能。
+
+### 核心功能
+- 👤 用户注册/登录、个人资料管理
+- 👨‍⚕️ 咨询师管理、在线状态
+- 💬 实时聊天、消息推送
+- 📦 订单管理、状态跟踪
+- 💳 在线支付（微信、支付宝）
+- 💰 账单管理、提现申请
+- 🔐 角色权限管理 (RBAC)
+- 📊 统计报表、数据分析
+- 🎨 低代码平台
+
+## 🏗️ 技术架构
+
+### 服务架构
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    客户端                         │
-│  ┌─────────┐  ┌─────────┐  ┌─────────────┐    │
-│  │ 用户端  │  │ 移动端  │  │  管理后台   │    │
-│  └────┬────┘  └────┬────┘  └──────┬──────┘    │
-└───────┼────────────┼─────────────┼────────────┘
-        │            │             │
-        ↓            ↓             ↓
-┌─────────────────────────────────────────────────────┐
-│                   网关层 (Nginx)                    │
-└─────────────────────────────────────────────────────┘
-        │            │             │
-        ↓            ↓             ↓
-┌──────────┐  ┌──────────┐  ┌─────────────┐
-│API 服务  │  │WebSocket │  │管理后台 API │
-│ :8080    │  │ :8082    │  │ :8081       │
-└─────┬────┘  └─────┬────┘  └──────┬──────┘
-      │             │              │
-      └─────────────┼──────────────┘
+│                   用户端应用                          │
+│  (Vue/React/小程序/H5)                                │
+└────────────────────┬────────────────────────────────┘
+                     │
+        ┌────────────┴────────────┐
+        │                         │
+        ↓ HTTP REST API           ↓ WebSocket
+┌──────────────────┐      ┌──────────────────┐
+│ 用户端 API (8080) │      │WebSocket (8082)  │
+│ • 用户/咨询师      │      │ • 实时消息       │
+│ • 订单/支付        │      │ • 在线状态       │
+└────────┬─────────┘      └──────────────────┘
+         │
+         └──────────┬─────────────────┘
+                    │
+    ┌───────────────┴────────────────┐
+    │   MySQL + Redis               │
+    └───────────────┬────────────────┘
+                    │
                     ↓
-          ┌────────────────┐
-          │  MySQL + Redis│
-          └────────────────┘
+┌──────────────────────────────────┐
+│   管理后台 (admin/backend)  │
+│   (端口 8081)               │
+│  • 用户管理                 │
+│  • 订单审核                 │
+│  • 财务管理                 │
+│  • 系统配置                 │
+│  • RBAC 权限               │
+└──────────────────────────────────┘
 ```
+
+### 技术栈
+
+#### 后端
+- **语言**: Go 1.20+
+- **框架**: Gin Web Framework
+- **ORM**: GORM
+- **数据库**: MySQL 5.7+
+- **缓存**: Redis 6.0+ (可选)
+- **认证**: JWT
+- **实时通信**: Gorilla WebSocket
+- **支付**: 微信支付、支付宝
+
+#### 前端
+- **框架**: Vue 3
+- **UI**: Element Plus
+- **HTTP**: Axios
+- **状态**: Pinia
+- **路由**: Vue Router
 
 ## 📁 项目结构
 
 ```
 mychat/
-├── api/                          # API 服务 (:8080)
-│   ├── main.go                   # 服务入口
-│   ├── handlers/                 # 业务处理器
-│   ├── models/                   # 数据模型
-│   ├── middleware/               # 中间件
-│   ├── utils/                    # 工具函数
-│   ├── cache/                    # 缓存操作
-│   ├── database/                 # 数据库配置
-│   └── README.md                # 服务文档
-│
-├── websocket/                    # WebSocket 服务 (:8082)
-│   ├── main.go                   # 服务入口
-│   ├── hub.go                    # 连接管理
-│   ├── manager.go                # 会话管理
-│   ├── message.go                # 消息处理
-│   ├── models/                   # 数据模型
-│   ├── cache/                    # 缓存操作
-│   └── README.md                # 服务文档
-│
-├── admin/                        # 管理后台
-│   ├── backend/                  # 管理后台后端 (:8081)
-│   │   ├── main.go             # 服务入口
-│   │   ├── handlers/           # 管理后台处理器
-│   │   ├── models/             # 数据模型
-│   │   ├── middleware/         # 中间件
-│   │   ├── utils/              # 工具函数
-│   │   └── README.md          # 服务文档
-│   │
-│   ├── frontend/                 # 管理后台前端 (:3000)
-│   │   ├── src/                # 源代码
-│   │   ├── package.json        # 依赖配置
-│   │   ├── vite.config.js      # 构建配置
-│   │   └── README.md          # 前端文档
-│   │
-│   ├── STRUCTURE.md             # 管理后台结构说明
-│   └── README.md               # 管理后台说明
-│
-├── cert/                        # 证书目录
-├── uploads/                     # 上传文件目录
-├── README.md                    # 项目说明 (本文件)
-├── SOA_ARCHITECTURE.md          # SOA 架构详细说明
-├── PROJECT_STRUCTURE.md         # 项目结构说明
-├── PROJECT_VERIFICATION.md      # 项目结构验证
-└── ADMIN_README.md             # 管理后台使用说明
+├── api/                      # 用户端 API (端口 8080)
+│   ├── handlers/              # 请求处理
+│   ├── models/               # 数据模型
+│   ├── cache/                # 缓存层
+│   ├── database/             # 数据库连接
+│   ├── middleware/           # 中间件
+│   ├── utils/                # 工具类
+│   └── main.go               # 主入口
+├── admin/                    # 管理后台
+│   ├── backend/              # 管理后台 API (端口 8081)
+│   │   ├── handlers/        # 请求处理
+│   │   ├── models/          # 数据模型
+│   │   ├── cache/           # 缓存层
+│   │   ├── database/        # 数据库连接
+│   │   ├── middleware/      # 中间件
+│   │   ├── utils/           # 工具类
+│   │   ├── websocket/       # WebSocket Hub
+│   │   └── main.go         # 主入口
+│   └── frontend/            # 管理后台前端 (端口 3000)
+│       └── src/             # Vue 源码
+├── websocket/                # WebSocket 服务 (端口 8082)
+│   ├── hub.go              # WebSocket Hub
+│   ├── manager.go          # 连接管理
+│   ├── message.go          # 消息处理
+│   └── stats.go            # 统计信息
+├── docs/                    # 项目文档
+│   ├── README.md           # 文档索引
+│   ├── SERVICE_SEPARATION.md  # 服务分离说明
+│   ├── API.md              # API 文档
+│   ├── DATABASE.md          # 数据库文档
+│   ├── PROJECT_STATUS.md    # 项目状态
+│   └── IMPROVEMENT_PLAN.md # 完善计划
+├── uploads/                 # 文件上传目录
+├── start-all.bat            # 一键启动所有服务
+├── stop-all.bat             # 一键停止所有服务
+└── .gitignore              # Git 忽略配置
 ```
 
 ## 🚀 快速开始
 
-### 前置要求
-
-- Go 1.21+
+### 环境要求
+- Go 1.20+
 - Node.js 16+
 - MySQL 5.7+
-- Redis 6.0+
+- Redis 6.0+ (可选)
 
-### 1. 启动 API 服务
-
+### 1. 克隆项目
 ```bash
+git clone <repository-url>
+cd mychat
+```
+
+### 2. 初始化数据库
+```bash
+# 创建数据库
+mysql -u root -p -e "CREATE DATABASE mychat CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 导入初始数据
+mysql -u root -p mychat < api/init_data.sql
+```
+
+### 3. 启动服务
+
+#### 方式一：使用启动脚本（推荐）
+```bash
+# Windows
+start-all.bat
+
+# Linux/Mac
+bash start-all.sh
+```
+
+#### 方式二：单独启动
+```bash
+# 用户端 API (8080)
 cd api
 go mod tidy
 go run main.go
-```
 
-服务启动在 http://localhost:8080
-
-**主要功能**:
-- 用户认证与授权
-- 订单管理
-- 支付系统（微信、支付宝）
-- 评价系统
-- 通知系统
-- 统计数据
-
-### 2. 启动 WebSocket 服务
-
-```bash
-cd websocket
-go mod tidy
-go run main.go
-```
-
-服务启动在 http://localhost:8082
-
-**主要功能**:
-- 实时聊天
-- 消息推送
-- 会话管理
-- 在线状态管理
-
-### 3. 启动管理后台后端
-
-```bash
+# 管理后台 API (8081)
 cd admin/backend
 go mod tidy
 go run main.go
-```
 
-服务启动在 http://localhost:8081
+# WebSocket 服务 (8082)
+cd websocket
+go mod tidy
+go run main.go
 
-**主要功能**:
-- 用户管理
-- 咨询师管理
-- 订单管理
-- 聊天记录管理
-- 财务管理
-- 权限管理（RBAC）
-- 低代码平台
-
-### 4. 启动管理后台前端
-
-```bash
+# 管理后台前端 (3000)
 cd admin/frontend
 npm install
 npm run dev
 ```
 
-服务启动在 http://localhost:3000
+### 4. 访问系统
 
-## 📚 访问地址
+#### 用户端 API
+- API 地址: http://localhost:8080
+- Swagger 文档: http://localhost:8080/swagger/index.html
+- 健康检查: http://localhost:8080/health
 
-| 服务 | 地址 | 说明 |
-|------|------|------|
-| API 文档 | http://localhost:8080/swagger/index.html | Swagger API 文档 |
-| API 健康检查 | http://localhost:8080/health | 服务健康状态 |
-| WebSocket 服务 | ws://localhost:8082/ws | WebSocket 连接 |
-| 管理后台 | http://localhost:3000 | 管理后台界面 |
+#### 管理后台
+- 后端 API: http://localhost:8081
+- 前端界面: http://localhost:3000
+- 默认账号: admin / 123456
 
-## 🎯 核心功能
+#### WebSocket
+- 连接地址: ws://localhost:8082/ws
 
-### 用户端
-- ✅ 用户注册/登录
-- ✅ 浏览咨询师列表
-- ✅ 下单购买咨询服务
-- ✅ 在线聊天
-- ✅ 订单管理
-- ✅ 支付结算
-- ✅ 评价咨询师
+## 🔐 默认账户
 
-### 咨询师端
-- ✅ 接受订单
-- ✅ 在线咨询服务
-- ✅ 查看收入
-- ✅ 提现申请
-- ✅ 查看评价
+### 管理员
+- 用户名: `admin`
+- 密码: `123456`
 
-### 管理后台
-- ✅ 用户管理（CRUD、密码重置）
-- ✅ 咨询师管理（CRUD、状态控制）
-- ✅ 订单管理（列表、统计、状态更新）
-- ✅ 聊天记录管理（查询、搜索、统计）
-- ✅ 财务管理（提现审核、统计报表）
-- ✅ 权限管理（RBAC、角色、权限）
-- ✅ 低代码平台（表单设计、页面设计）
+### 测试用户
+- 用户名: `testuser`
+- 密码: `123456`
 
-## 🔧 技术栈
+## 📚 文档
 
-### 后端
+详细文档请查看 [docs/](./docs/) 目录：
 
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| Go | 1.21+ | 编程语言 |
-| Gin | v1.9.1 | Web 框架 |
-| GORM | v1.25.5 | ORM 框架 |
-| MySQL | 5.7+ | 关系型数据库 |
-| Redis | 6.0+ | 缓存数据库 |
-| JWT | v5.2.0 | 认证授权 |
-| WebSocket | - | 实时通信 |
-
-### 前端
-
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| Vue | 3.x | 前端框架 |
-| Element Plus | 2.x | UI 组件库 |
-| Vue Router | 4.x | 路由管理 |
-| Pinia | 2.x | 状态管理 |
-| Vite | 5.x | 构建工具 |
-| Axios | 1.x | HTTP 客户端 |
-
-## 📖 文档
-
-| 文档 | 说明 |
-|------|------|
-| [SOA 架构说明](SOA_ARCHITECTURE.md) | 详细的 SOA 架构设计文档 |
-| [项目结构说明](PROJECT_STRUCTURE.md) | 项目目录结构详解 |
-| [项目结构验证](PROJECT_VERIFICATION.md) | SOA 架构验证报告 |
-| [管理后台使用说明](ADMIN_README.md) | 管理后台功能详解 |
-| [API 服务文档](api/README.md) | API 服务详细说明 |
-| [WebSocket 服务文档](websocket/README.md) | WebSocket 服务详细说明 |
-| [管理后台后端文档](admin/backend/README.md) | 管理后台 API 说明 |
-| [管理后台前端文档](admin/frontend/README.md) | 管理后台前端说明 |
-| [管理后台结构说明](admin/STRUCTURE.md) | 管理后台目录结构 |
-
-## 🐳 Docker 部署
-
-```bash
-# 构建并启动所有服务
-docker-compose up -d
-
-# 查看服务状态
-docker-compose ps
-
-# 查看日志
-docker-compose logs -f
-
-# 停止服务
-docker-compose down
-```
-
-## 🔐 环境变量
-
-创建 `.env` 文件配置以下变量：
-
-```env
-# 数据库
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=mychat
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-
-# JWT
-JWT_SECRET=your_jwt_secret
-JWT_EXPIRES=24h
-
-# 微信支付
-WECHAT_APP_ID=your_app_id
-WECHAT_MCH_ID=your_mch_id
-WECHAT_API_KEY=your_api_key
-WECHAT_NOTIFY_URL=http://your-domain.com/api/payment/wechat/callback
-
-# 支付宝
-ALIPAY_APP_ID=your_app_id
-ALIPAY_PRIVATE_KEY=your_private_key
-ALIPAY_PUBLIC_KEY=your_public_key
-ALIPAY_NOTIFY_URL=http://your-domain.com/api/payment/alipay/callback
-```
-
-## 📊 服务端口
-
-| 服务 | 端口 | 协议 | 说明 |
-|------|------|------|------|
-| API 服务 | 8080 | HTTP | RESTful API |
-| WebSocket 服务 | 8082 | HTTP/WebSocket | 实时通信 |
-| 管理后台 API | 8081 | HTTP | 管理后台 API |
-| 管理后台前端 | 3000 | HTTP | Web 界面 |
-| MySQL | 3306 | TCP | 数据库 |
-| Redis | 6379 | TCP | 缓存 |
-
-## 🔄 服务通信
-
-### API 服务 → WebSocket 服务
-```http
-GET http://localhost:8082/ws/stats
-```
-
-### 客户端 → WebSocket 服务
-```javascript
-const ws = new WebSocket('ws://localhost:8082/ws');
-```
-
-### 管理后台前端 → 管理后台 API
-```http
-GET http://localhost:8081/api/admin/users
-```
+- **[服务分离说明](./docs/SERVICE_SEPARATION.md)** - 详细的接口列表和职责说明
+- **[API 文档](./docs/API.md)** - 完整的 API 接口文档
+- **[数据库文档](./docs/DATABASE.md)** - 数据库表结构说明
+- **[项目状态](./docs/PROJECT_STATUS.md)** - 当前项目状态和问题清单
+- **[完善计划](./docs/IMPROVEMENT_PLAN.md)** - 后续完善计划
 
 ## 🛠️ 开发指南
 
 ### 添加新的 API 接口
-1. 在 `api/handlers/` 中创建处理器函数
-2. 在 `api/main.go` 中注册路由
-3. 添加 Swagger 注释
-4. 运行 `swag init` 更新文档
 
-### 添加新的管理后台页面
-1. 在 `admin/frontend/src/views/` 中创建页面组件
-2. 在 `admin/frontend/src/api/` 中创建 API 接口文件
-3. 在 `admin/frontend/src/router/` 中添加路由配置
+#### 用户端 API (api/)
+1. 在 `api/handlers/` 创建处理函数
+2. 在 `api/main.go` 注册路由
+3. 更新 Swagger 注释
+4. 运行 `swag init` 生成文档
 
-### WebSocket 消息处理
-1. 在 `websocket/message.go` 中定义消息类型
-2. 在 `websocket/hub.go` 中处理消息逻辑
-3. 更新前端 WebSocket 客户端
+#### 管理后台 API (admin/backend/)
+1. 在 `admin/backend/handlers/` 创建处理函数
+2. 在 `admin/backend/main.go` 注册路由
 
-## 🤝 贡献指南
+### 添加新的数据表
+1. 在 MySQL 中创建表
+2. 在对应 `models/` 目录创建模型文件
+3. 在 `database/db.go` 中添加 AutoMigrate
+
+## 🐛 常见问题
+
+### 1. 服务启动失败
+- 检查端口是否被占用
+- 确认数据库连接配置正确
+- 确认 Redis 是否启动（可选）
+- 运行 `go mod tidy` 安装依赖
+
+### 2. 数据库连接失败
+- 检查 MySQL 是否启动
+- 确认数据库配置在 `database/db.go`
+- 确认用户名密码正确
+- 确认数据库已创建
+
+### 3. 前端无法连接 API
+- 检查跨域配置 (CORS)
+- 确认 API 服务已启动
+- 检查防火墙设置
+
+### 4. WebSocket 连接失败
+- 确认 WebSocket 服务已启动 (8082)
+- 检查 WebSocket URL 是否正确
+- 确认网络连接正常
+
+## 📊 项目进度
+
+| 模块 | 完成度 | 状态 |
+|------|--------|------|
+| 管理后台 API | 95% | ✅ 运行正常 |
+| 管理后台前端 | 90% | ✅ 可用 |
+| 用户端 API | 70% | ⚠️ 需修复 |
+| WebSocket 服务 | 60% | ⚠️ 需修复 |
+| 数据库设计 | 95% | ✅ 完成 |
+| 文档 | 90% | ✅ 完善 |
+
+**整体完成度**: ~82%
+
+## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
+### 提交规范
+```
+feat: 新功能
+fix: 修复 bug
+docs: 文档更新
+style: 代码格式调整
+refactor: 重构
+test: 测试相关
+chore: 构建/工具相关
+```
 
-## 📄 许可证
+## 📄 License
 
 MIT License
 
-## 📧 联系方式
-
-- 项目主页: https://github.com/your-repo/mychat
-- 问题反馈: https://github.com/your-repo/mychat/issues
-- 架构设计: [SOA_ARCHITECTURE.md](SOA_ARCHITECTURE.md)
-
-## 🎉 致谢
-
-感谢所有为此项目做出贡献的开发者！
-
 ---
 
-**注意**: 本项目采用 SOA 架构设计，每个服务都是独立的，可以单独部署和扩展。详细架构说明请参考 [SOA 架构文档](SOA_ARCHITECTURE.md)。
+**项目创建**: 2026-01-28
+**最后更新**: 2026-01-28
+**版本**: v1.0.0

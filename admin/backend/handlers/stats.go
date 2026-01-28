@@ -3,6 +3,7 @@ package handlers
 import (
 	"akrick.com/mychat/admin/backend/database"
 	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/admin/backend/utils"
 	"github.com/gin-gonic/gin"
 	"time"
 )
@@ -207,7 +208,7 @@ func CounselorRanking(c *gin.Context) {
 			Joins("LEFT JOIN orders ON counselors.id = orders.counselor_id AND orders.status >= ?", models.OrderStatusPaid).
 			Group("counselors.id").
 			Order("order_count DESC").
-			Limit(parseInt(limit)).
+			Limit(utils.ParseInt(limit)).
 			Find(&counselors)
 
 	case "income":
@@ -217,7 +218,7 @@ func CounselorRanking(c *gin.Context) {
 			Joins("LEFT JOIN orders ON counselors.id = orders.counselor_id AND orders.status >= ?", models.OrderStatusPaid).
 			Group("counselors.id").
 			Order("total_income DESC").
-			Limit(parseInt(limit)).
+			Limit(utils.ParseInt(limit)).
 			Find(&counselors)
 
 	case "rating":
@@ -226,7 +227,7 @@ func CounselorRanking(c *gin.Context) {
 			Select("counselors.*").
 			Where("status = ?", 1).
 			Order("rating DESC").
-			Limit(parseInt(limit)).
+			Limit(utils.ParseInt(limit)).
 			Find(&counselors)
 
 	default:

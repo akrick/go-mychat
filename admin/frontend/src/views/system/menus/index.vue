@@ -127,9 +127,31 @@ const menuTree = computed(() => {
 const loadMenus = async () => {
   loading.value = true
   try {
+    console.log('开始加载菜单...')
     const res = await getMenuList()
-    tableData.value = res.data?.list || res.list || res.data || res || []
+    console.log('菜单接口返回:', res)
+    
+    // 处理不同的数据格式
+    let menuList = []
+    if (res?.data?.list) {
+      menuList = res.data.list
+    } else if (res?.list) {
+      menuList = res.list
+    } else if (res?.data) {
+      // 如果 data 是数组，直接使用
+      if (Array.isArray(res.data)) {
+        menuList = res.data
+      } else if (res.data.list) {
+        menuList = res.data.list
+      }
+    } else if (Array.isArray(res)) {
+      menuList = res
+    }
+    
+    console.log('处理后的菜单数据:', menuList)
+    tableData.value = menuList
   } catch (error) {
+    console.error('加载菜单失败:', error)
     ElMessage.error(error.message || '获取菜单列表失败')
   } finally {
     loading.value = false

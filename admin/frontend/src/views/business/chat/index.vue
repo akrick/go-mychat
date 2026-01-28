@@ -139,8 +139,8 @@ const handleQuery = async () => {
   loading.value = true
   try {
     const res = await getChatSessions(queryParams)
-    tableData.value = res.sessions
-    total.value = res.total
+    tableData.value = res.data?.list || res.sessions || []
+    total.value = res.data?.total || res.total || 0
   } catch (error) {
     ElMessage.error(error.message || '获取会话列表失败')
   } finally {

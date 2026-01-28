@@ -123,8 +123,8 @@ const handleQuery = async () => {
   loading.value = true
   try {
     const res = await getOrderList(queryParams)
-    tableData.value = res.orders
-    total.value = res.total
+    tableData.value = res.data?.list || res.orders || []
+    total.value = res.data?.total || res.total || 0
   } catch (error) {
     ElMessage.error(error.message || '获取订单列表失败')
   } finally {

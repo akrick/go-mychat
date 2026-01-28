@@ -3,6 +3,7 @@ package handlers
 import (
 	"akrick.com/mychat/admin/backend/database"
 	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/admin/backend/utils"
 	"akrick.com/mychat/admin/backend/websocket"
 	"time"
 
@@ -149,11 +150,11 @@ func GetBillingList(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
 	if err := query.Preload("Session").Preload("Order").Preload("User").Preload("Counselor").
-		Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&billings).Error; err != nil {
+		Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&billings).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -207,11 +208,11 @@ func GetCounselorBillings(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
 	if err := query.Preload("Session").Preload("Order").Preload("User").Preload("Counselor").
-		Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&billings).Error; err != nil {
+		Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&billings).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -398,11 +399,11 @@ func GetCounselorWithdrawList(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
 	if err := query.Preload("Counselor").
-		Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&withdraws).Error; err != nil {
+		Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&withdraws).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -468,10 +469,10 @@ func GetMessageHistory(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&messages).Error; err != nil {
+	if err := query.Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&messages).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -525,7 +526,7 @@ func GetUnreadCount(c *gin.Context) {
 	if len(sessionIDs) > 0 {
 		rows, _ := database.DB.Model(&models.ChatMessage{}).
 			Select("session_id, count(*) as unread_count").
-			Where("session_id IN ? AND is_read = false AND sender_id != ?", sessionIDs, userID).
+			Where("session_id IN (?) AND is_read = false AND sender_id != ?", sessionIDs, userID).
 			Group("session_id").
 			Rows()
 
@@ -659,10 +660,10 @@ func SearchMessages(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&messages).Error; err != nil {
+	if err := query.Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&messages).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -797,7 +798,7 @@ func GetOnlineCounselors(c *gin.Context) {
 	// 查询在线咨询师
 	var counselors []models.Counselor
 	if len(onlineUserIDs) > 0 {
-		database.DB.Where("user_id IN ? AND status = 1", onlineUserIDs).
+		database.DB.Where("user_id IN (?) AND status = 1", onlineUserIDs).
 			Preload("User").
 			Find(&counselors)
 	}

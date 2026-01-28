@@ -1,11 +1,21 @@
 <template>
   <div class="withdraw-container">
     <el-card>
-      <el-form :inline="true" class="demo-form-inline">
-        <el-form-item>
-          <el-button type="primary" @click="handleQuery">刷新</el-button>
-        </el-form-item>
-      </el-form>
+      <template #header>
+        <div class="card-header">
+          <span>提现管理</span>
+          <div>
+            <el-radio-group v-model="queryParams.status" @change="handleQuery">
+              <el-radio-button value="">全部</el-radio-button>
+              <el-radio-button :value="0">待审核</el-radio-button>
+              <el-radio-button :value="1">已通过</el-radio-button>
+              <el-radio-button :value="2">已拒绝</el-radio-button>
+              <el-radio-button :value="3">已打款</el-radio-button>
+            </el-radio-group>
+            <el-button type="primary" @click="handleQuery" style="margin-left: 10px;">刷新</el-button>
+          </div>
+        </div>
+      </template>
 
       <el-table :data="tableData" border style="width: 100%" v-loading="loading">
         <el-table-column prop="id" label="ID" width="80" />
@@ -30,10 +40,14 @@
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="申请时间" width="180" />
+        <el-table-column prop="audited_at" label="审核时间" width="180" />
+        <el-table-column prop="transferred_at" label="打款时间" width="180" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" type="success" @click="handleApprove(row)">通过</el-button>
-            <el-button size="small" type="danger" @click="handleReject(row)">拒绝</el-button>
+            <el-button v-if="row.status === 0" size="small" type="success" @click="handleApprove(row)">通过</el-button>
+            <el-button v-if="row.status === 0" size="small" type="danger" @click="handleReject(row)">拒绝</el-button>
+            <el-button v-if="row.status === 1" size="small" type="primary" @click="handleTransfer(row)">确认打款</el-button>
+            <el-button v-if="row.rejected_reason" size="small" type="info" @click="handleViewReason(row)">查看原因</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -64,24 +78,33 @@
         <el-button type="danger" @click="handleRejectSubmit">确认拒绝</el-button>
       </template>
     </el-dialog>
+
+    <!-- 查看拒绝原因 -->
+    <el-dialog v-model="reasonDialogVisible" title="拒绝原因" width="500px">
+      <el-alert type="error" :closable="false">
+        {{ currentWithdraw?.rejected_reason }}
+      </el-alert>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getPendingWithdraws, approveWithdraw } from '@/api/finance'
+import { getWithdrawList, approveWithdraw, confirmWithdrawTransfer } from '@/api/finance'
 
 const loading = ref(false)
 const tableData = ref([])
 const total = ref(0)
 const rejectDialogVisible = ref(false)
+const reasonDialogVisible = ref(false)
 const rejectFormRef = ref()
 const currentWithdraw = ref(null)
 
 const queryParams = reactive({
   page: 1,
-  page_size: 20
+  page_size: 20,
+  status: ''
 })
 
 const rejectForm = reactive({
@@ -92,9 +115,9 @@ const rejectForm = reactive({
 const handleQuery = async () => {
   loading.value = true
   try {
-    const res = await getPendingWithdraws(queryParams)
-    tableData.value = res.withdraws
-    total.value = res.total
+    const res = await getWithdrawList(queryParams)
+    tableData.value = res.data?.withdraws || res.withdraws || []
+    total.value = res.data?.total || res.total || 0
   } catch (error) {
     ElMessage.error(error.message || '获取提现列表失败')
   } finally {
@@ -107,7 +130,7 @@ const getStatusType = (status) => {
     0: 'warning',
     1: 'success',
     2: 'danger',
-    3: 'success'
+    3: 'info'
   }
   return types[status] || 'info'
 }
@@ -160,6 +183,27 @@ const handleRejectSubmit = async () => {
   }
 }
 
+const handleTransfer = (row) => {
+  ElMessageBox.confirm(`确认已完成打款?金额: ¥${row.amount.toFixed(2)}`, '确认打款', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'success'
+  }).then(async () => {
+    try {
+      await confirmWithdrawTransfer(row.id)
+      ElMessage.success('确认打款成功')
+      handleQuery()
+    } catch (error) {
+      ElMessage.error(error.message || '操作失败')
+    }
+  })
+}
+
+const handleViewReason = (row) => {
+  currentWithdraw.value = row
+  reasonDialogVisible.value = true
+}
+
 onMounted(() => {
   handleQuery()
 })
@@ -170,8 +214,11 @@ onMounted(() => {
   padding: 20px;
 }
 
-.demo-form-inline {
-  margin-bottom: 20px;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
 }
 
 .el-pagination {

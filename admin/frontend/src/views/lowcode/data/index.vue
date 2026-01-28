@@ -105,8 +105,8 @@ const loadTableData = async () => {
   try {
     loading.value = true
     const res = await getFormDataList(queryForm.formId, queryForm)
-    tableData.value = res.list || []
-    total.value = res.total || 0
+    tableData.value = res.data?.list || res.list || []
+    total.value = res.data?.total || res.total || 0
   } catch (error) {
     console.error(error)
   } finally {

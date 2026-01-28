@@ -146,8 +146,8 @@ const handleQuery = async () => {
   loading.value = true
   try {
     const res = await getCounselorList(queryParams)
-    tableData.value = res.counselors
-    total.value = res.total
+    tableData.value = res.data?.list || res.counselors || []
+    total.value = res.data?.total || res.total || 0
   } catch (error) {
     ElMessage.error(error.message || '获取咨询师列表失败')
   } finally {

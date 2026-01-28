@@ -53,7 +53,7 @@ func GetMenuTree(c *gin.Context) {
 
 // GetMenuList godoc
 // @Summary 获取菜单列表
-// @Description 获取所有菜单列表(带分页)
+// @Description 获取所有菜单列表(不分页,树形结构)
 // @Tags 管理员
 // @Accept json
 // @Produce json
@@ -61,8 +61,6 @@ func GetMenuTree(c *gin.Context) {
 // @Success 200 {object} map[string]interface{} "code:200,msg:获取成功"
 // @Router /api/admin/menus [get]
 func GetMenuList(c *gin.Context) {
-	page := c.DefaultQuery("page", "1")
-	pageSize := c.DefaultQuery("page_size", "20")
 	name := c.Query("name")
 
 	query := database.DB.Model(&models.Menu{})
@@ -73,14 +71,12 @@ func GetMenuList(c *gin.Context) {
 
 	var total int64
 	query.Count(&total)
+	fmt.Printf("数据库中菜单总数: %d\n", total)
 
+	// 查询所有菜单数据用于构建树形结构
 	var menus []models.Menu
-	offset := 0
-	if page != "1" {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
-	}
-
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("sort ASC, id ASC").Find(&menus).Error; err != nil {
+	if err := query.Order("sort ASC, id ASC").Find(&menus).Error; err != nil {
+		fmt.Printf("查询菜单失败: %v\n", err)
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -88,8 +84,14 @@ func GetMenuList(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("查询到菜单数量: %d\n", len(menus))
+	for i, menu := range menus {
+		fmt.Printf("菜单 %d: ID=%d, Name=%s, ParentID=%v, Type=%d\n", i, menu.ID, menu.Name, menu.ParentID, menu.Type)
+	}
+
 	// 构建树形结构
 	menuTree := buildMenuTree(menus, 0)
+	fmt.Printf("构建的菜单树节点数: %d\n", len(menuTree))
 
 	c.JSON(200, gin.H{
 		"code": 200,
@@ -135,8 +137,25 @@ func buildMenuTree(menus []models.Menu, parentID int) []MenuNode {
 
 	for _, menu := range menus {
 		var pid *int
-		if menu.ParentID != nil && *menu.ParentID == parentID {
+		if menu.ParentID != nil {
 			pid = menu.ParentID
+		}
+
+		// 判断当前菜单是否是指定父级的子菜单
+		isChild := false
+		if parentID == 0 {
+			// 查找顶级菜单: ParentID 为 nil 或者 ParentID 为 0
+			if menu.ParentID == nil || *menu.ParentID == 0 {
+				isChild = true
+			}
+		} else {
+			// 查找指定父ID的子菜单
+			if menu.ParentID != nil && *menu.ParentID == parentID {
+				isChild = true
+			}
+		}
+
+		if isChild {
 			node := MenuNode{
 				ID:         menu.ID,
 				ParentID:   pid,

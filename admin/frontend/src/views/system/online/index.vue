@@ -193,8 +193,8 @@ const handleQuery = async () => {
   loading.value = true
   try {
     const res = await getOnlineUsers(queryForm)
-    tableData.value = res.users || []
-    total.value = res.total || 0
+    tableData.value = res.data?.users || res.users || []
+    total.value = res.data?.total || res.total || 0
 
     // 统计各类型用户
     stats.total = tableData.value.length

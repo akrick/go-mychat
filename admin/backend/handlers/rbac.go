@@ -3,6 +3,7 @@ package handlers
 import (
 	"akrick.com/mychat/admin/backend/database"
 	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/admin/backend/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,10 +26,10 @@ func GetRoleList(c *gin.Context) {
 	var roles []models.Role
 	offset := 0
 	if page != "1" {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&roles).Error; err != nil {
+	if err := query.Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&roles).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败",
@@ -205,10 +206,10 @@ func GetPermissionList(c *gin.Context) {
 	var permissions []models.Permission
 	offset := 0
 	if page != "1" {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("sort ASC").Find(&permissions).Error; err != nil {
+	if err := query.Offset(offset).Limit(utils.ParseInt(pageSize)).Order("sort ASC").Find(&permissions).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败",

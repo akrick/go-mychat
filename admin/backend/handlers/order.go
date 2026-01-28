@@ -7,6 +7,7 @@ import (
 	"akrick.com/mychat/admin/backend/cache"
 	"akrick.com/mychat/admin/backend/database"
 	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/admin/backend/utils"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -246,10 +247,10 @@ func GetUserOrders(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Preload("Counselor").Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&orders).Error; err != nil {
+	if err := query.Preload("Counselor").Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&orders).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -313,10 +314,10 @@ func GetCounselorOrders(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Preload("User").Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&orders).Error; err != nil {
+	if err := query.Preload("User").Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&orders).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -479,13 +480,6 @@ func CancelOrder(c *gin.Context) {
 		"code": 200,
 		"msg":  "取消成功",
 	})
-}
-
-// 辅助函数：字符串转整数
-func parseInt(s string) int {
-	result := 0
-	fmt.Sscanf(s, "%d", &result)
-	return result
 }
 
 // 辅助函数：字符串转uint

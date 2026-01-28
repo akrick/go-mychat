@@ -7,6 +7,8 @@
 main
 mychat
 mychat.exe
+backend.exe
+server.exe
 
 # Test binary, built with `go test -c`
 *.test
@@ -33,6 +35,9 @@ vendor/
 # Logs
 logs/
 *.log
+server.log
+backend.log
+output.log
 
 # Uploads
 uploads/*
@@ -50,8 +55,23 @@ Thumbs.db
 # Build artifacts
 build/
 dist/
+admin/frontend/node_modules/
+admin/frontend/dist/
 
 # Coverage reports
 coverage.txt
 coverage.html
 coverage.xml
+
+# Documentation cleanup (keep only essential docs)
+ADMIN_README.md
+BACKEND_FIX_COMPLETE.md
+BACKEND_MODULES_COMPLETE.md
+CODE_FIX_SUMMARY.md
+FINANCE_MODULE_COMPLETE.md
+MODULES_COMPLETE.md
+PROJECT_VERIFICATION.md
+RBAC_IMPLEMENTATION.md
+SYSTEM_MODULE_COMPLETE.md
+SOA_ARCHITECTURE.md
+admin/*.md

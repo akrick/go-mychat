@@ -3,8 +3,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '@/router'
 
 const service = axios.create({
-  baseURL: '',
-  timeout: 10000
+  baseURL: import.meta.env.VITE_API_BASE_URL || '',
+  timeout: 30000  // 增加超时时间到30秒
 })
 
 // 请求拦截器
@@ -45,6 +45,7 @@ service.interceptors.response.use(
         }
         return Promise.reject(new Error(res.msg || '请求失败'))
       }
+      // 成功响应，返回完整数据（包括 code, msg, data）
       return res
     }
     // 如果没有code字段，直接返回（可能不是标准格式）

@@ -51,7 +51,7 @@ func GetOnlineUsers(c *gin.Context) {
 	// 查询用户详细信息
 	var users []models.User
 	if len(userIDs) > 0 {
-		database.DB.Where("id IN ?", userIDs).Find(&users)
+		database.DB.Where("id IN (?)", userIDs).Find(&users)
 	}
 
 	c.JSON(200, gin.H{
@@ -220,11 +220,11 @@ func GetPendingWithdraws(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
 	if err := query.Preload("Counselor").
-		Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&withdraws).Error; err != nil {
+		Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&withdraws).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),

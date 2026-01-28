@@ -25,6 +25,13 @@ export function approveWithdraw(id, data) {
   })
 }
 
+export function confirmWithdrawTransfer(id) {
+  return request({
+    url: `/api/admin/withdraw/${id}/transfer`,
+    method: 'post'
+  })
+}
+
 // 财务统计
 export function getFinanceStats(params) {
   return request({
@@ -50,3 +57,20 @@ export function getFinanceReports(params) {
     params
   })
 }
+
+// 咨询师账户管理
+export function getCounselorAccountList(params) {
+  return request({
+    url: '/api/admin/finance/accounts',
+    method: 'get',
+    params
+  })
+}
+
+export function getCounselorAccountDetail(id) {
+  return request({
+    url: `/api/admin/finance/accounts/${id}`,
+    method: 'get'
+  })
+}
+

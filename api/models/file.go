@@ -24,20 +24,3 @@ type File struct {
 	// 关联
 	Uploader User `gorm:"foreignKey:UploadedBy" json:"uploader,omitempty"`
 }
-
-// Notification 通知表
-type Notification struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	UserID    uint      `gorm:"not null;index;comment:接收用户ID" json:"user_id"`
-	Title     string    `gorm:"type:varchar(100);not null;comment:通知标题" json:"title"`
-	Content   string    `gorm:"type:text;not null;comment:通知内容" json:"content"`
-	Type      string    `gorm:"type:varchar(20);not null;comment:通知类型:order/chat/system" json:"type"`
-	IsRead    bool      `gorm:"default:false;index;comment:是否已读" json:"is_read"`
-	ReadTime   *time.Time `json:"read_time"`
-	LinkURL   string    `gorm:"type:varchar(255);comment:跳转链接" json:"link_url"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-
-	// 关联
-	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
-}

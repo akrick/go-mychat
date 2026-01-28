@@ -3,6 +3,7 @@ package handlers
 import (
 	"akrick.com/mychat/admin/backend/database"
 	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/admin/backend/utils"
 	"encoding/json"
 
 	"github.com/gin-gonic/gin"
@@ -26,10 +27,10 @@ func GetFormList(c *gin.Context) {
 	var forms []models.LowcodeForm
 	offset := 0
 	if page != "1" {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&forms).Error; err != nil {
+	if err := query.Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&forms).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败",
@@ -227,10 +228,10 @@ func GetFormDataList(c *gin.Context) {
 	var records []map[string]interface{}
 	offset := 0
 	if page != "1" {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&records).Error; err != nil {
+	if err := query.Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&records).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败",
@@ -268,10 +269,10 @@ func GetPageList(c *gin.Context) {
 	var pages []models.LowcodePage
 	offset := 0
 	if page != "1" {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&pages).Error; err != nil {
+	if err := query.Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&pages).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败",

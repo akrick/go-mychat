@@ -3,6 +3,7 @@ package handlers
 import (
 	"akrick.com/mychat/admin/backend/database"
 	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/admin/backend/utils"
 	"github.com/gin-gonic/gin"
 )
 
@@ -47,11 +48,11 @@ func GetAdminChatSessions(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
 	if err := query.Preload("User").Preload("Counselor").Preload("Order").
-		Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&sessions).Error; err != nil {
+		Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&sessions).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -106,10 +107,10 @@ func GetAdminChatMessages(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("created_at ASC").Find(&messages).Error; err != nil {
+	if err := query.Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at ASC").Find(&messages).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -210,11 +211,11 @@ func SearchChatMessages(c *gin.Context) {
 	if page == "1" {
 		offset = 0
 	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+		offset = (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
 	}
 
 	if err := query.Preload("Session").Preload("Session.User").Preload("Session.Counselor").
-		Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&messages).Error; err != nil {
+		Offset(offset).Limit(utils.ParseInt(pageSize)).Order("created_at DESC").Find(&messages).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
