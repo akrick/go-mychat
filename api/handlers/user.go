@@ -3,8 +3,9 @@ package handlers
 import (
 	"akrick.com/mychat/database"
 	"akrick.com/mychat/models"
-	"akrick.com/mychat/utils"
+	"akrick.com/mychat/api/utils"
 	"github.com/gin-gonic/gin"
+	"strconv"
 )
 
 // UpdateProfileRequest 更新用户资料请求
@@ -214,13 +215,14 @@ func GetUserList(c *gin.Context) {
 
 	var users []models.User
 	offset := 0
-	if page == "1" {
-		offset = 0
-	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+	if page != "1" {
+		p, _ := strconv.Atoi(page)
+		ps, _ := strconv.Atoi(pageSize)
+		offset = (p - 1) * ps
 	}
 
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&users).Error; err != nil {
+	ps, _ := strconv.Atoi(pageSize)
+	if err := query.Offset(offset).Limit(ps).Order("created_at DESC").Find(&users).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),

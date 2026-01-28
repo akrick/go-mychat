@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 	"akrick.com/mychat/cache"
 	"akrick.com/mychat/database"
@@ -134,7 +135,8 @@ func GetOrderDetail(c *gin.Context) {
 
 	// 尝试从缓存获取订单信息
 	if cache.Rdb != nil {
-		id := parseUint(orderID)
+		id64, _ := strconv.ParseUint(orderID, 10, 64)
+		id := uint(id64)
 		orderData, err := cache.GetOrderWithCache(ctx, id)
 		if err == nil {
 			order = models.Order{
@@ -243,13 +245,14 @@ func GetUserOrders(c *gin.Context) {
 
 	var orders []models.Order
 	offset := 0
-	if page == "1" {
-		offset = 0
-	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+	if page != "1" {
+		p, _ := strconv.Atoi(page)
+		ps, _ := strconv.Atoi(pageSize)
+		offset = (p - 1) * ps
 	}
 
-	if err := query.Preload("Counselor").Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&orders).Error; err != nil {
+	ps, _ := strconv.Atoi(pageSize)
+	if err := query.Preload("Counselor").Offset(offset).Limit(ps).Order("created_at DESC").Find(&orders).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -310,13 +313,14 @@ func GetCounselorOrders(c *gin.Context) {
 
 	var orders []models.Order
 	offset := 0
-	if page == "1" {
-		offset = 0
-	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+	if page != "1" {
+		p, _ := strconv.Atoi(page)
+		ps, _ := strconv.Atoi(pageSize)
+		offset = (p - 1) * ps
 	}
 
-	if err := query.Preload("User").Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&orders).Error; err != nil {
+	ps, _ := strconv.Atoi(pageSize)
+	if err := query.Preload("User").Offset(offset).Limit(ps).Order("created_at DESC").Find(&orders).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),

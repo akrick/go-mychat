@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"strconv"
 	"akrick.com/mychat/cache"
 	"akrick.com/mychat/database"
 	"akrick.com/mychat/models"
@@ -105,13 +106,14 @@ func GetCounselorList(c *gin.Context) {
 
 	var counselors []models.Counselor
 	offset := 0
-	if page == "1" {
-		offset = 0
-	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+	if page != "1" {
+		p, _ := strconv.Atoi(page)
+		ps, _ := strconv.Atoi(pageSize)
+		offset = (p - 1) * ps
 	}
 
-	if err := query.Offset(offset).Limit(parseInt(pageSize)).Order("rating DESC, created_at DESC").Find(&counselors).Error; err != nil {
+	ps, _ := strconv.Atoi(pageSize)
+	if err := query.Offset(offset).Limit(ps).Order("rating DESC, created_at DESC").Find(&counselors).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -148,7 +150,8 @@ func GetCounselorDetail(c *gin.Context) {
 
 	// 尝试从缓存获取
 	if cache.Rdb != nil {
-		id := parseUint(counselorID)
+		id64, _ := strconv.ParseUint(counselorID, 10, 64)
+		id := uint(id64)
 		counselorData, err := cache.GetCounselorWithCache(ctx, id)
 		if err == nil {
 			counselor = models.Counselor{

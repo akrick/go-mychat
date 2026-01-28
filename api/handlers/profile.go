@@ -6,7 +6,7 @@ import (
 
 	"akrick.com/mychat/database"
 	"akrick.com/mychat/models"
-	"akrick.com/mychat/utils"
+	"akrick.com/mychat/api/utils"
 
 	"github.com/gin-gonic/gin"
 )

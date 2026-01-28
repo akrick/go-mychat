@@ -4,6 +4,7 @@ import (
 	"akrick.com/mychat/database"
 	"akrick.com/mychat/models"
 	"github.com/gin-gonic/gin"
+	"strconv"
 )
 
 // CreateNotification 创建通知（内部使用）
@@ -66,13 +67,14 @@ func GetNotifications(c *gin.Context) {
 
 	var notifications []models.Notification
 	offset := 0
-	if page == "1" {
-		offset = 0
-	} else {
-		offset = (parseInt(page) - 1) * parseInt(pageSize)
+	if page != "1" {
+		p, _ := strconv.Atoi(page)
+		ps, _ := strconv.Atoi(pageSize)
+		offset = (p - 1) * ps
 	}
 
-	if err := query.Preload("User").Offset(offset).Limit(parseInt(pageSize)).Order("created_at DESC").Find(&notifications).Error; err != nil {
+	ps, _ := strconv.Atoi(pageSize)
+	if err := query.Preload("User").Offset(offset).Limit(ps).Order("created_at DESC").Find(&notifications).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
