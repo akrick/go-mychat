@@ -7,8 +7,8 @@ import (
 	"math/rand"
 	"time"
 
-	"akrick.com/mychat/admin/backend/database"
-	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/database"
+	"akrick.com/mychat/models"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -52,7 +52,7 @@ var (
 func GetOrderWithCache(ctx context.Context, orderID uint) (*OrderCacheData, error) {
 	cacheKey := fmt.Sprintf("order:detail:%d", orderID)
 
-	result, err, _ := OrderGroup.Do(cacheKey, func() (interface{}, error) {
+	result, err, _ := OrderGroup.Do(cacheKey, func() (any, error) {
 		// 1. 先从缓存获取
 		cachedData, err := Rdb.Get(ctx, cacheKey).Result()
 		if err == nil {
@@ -104,7 +104,7 @@ func GetOrderWithCache(ctx context.Context, orderID uint) (*OrderCacheData, erro
 func GetCounselorWithCache(ctx context.Context, counselorID uint) (*CounselorCacheData, error) {
 	cacheKey := fmt.Sprintf("counselor:detail:%d", counselorID)
 
-	result, err, _ := CounselorGroup.Do(cacheKey, func() (interface{}, error) {
+	result, err, _ := CounselorGroup.Do(cacheKey, func() (any, error) {
 		// 1. 先从缓存获取
 		cachedData, err := Rdb.Get(ctx, cacheKey).Result()
 		if err == nil {

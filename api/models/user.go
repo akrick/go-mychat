@@ -15,6 +15,7 @@ type User struct {
 	Email     string         `gorm:"type:varchar(100);uniqueIndex" json:"email"`
 	Phone     string         `gorm:"type:varchar(20)" json:"phone"`
 	Avatar    string         `gorm:"type:varchar(255)" json:"avatar"`
+	Balance   float64        `gorm:"type:decimal(10,2);default:0;comment:账户余额" json:"balance"`
 	Status    int            `gorm:"default:1;comment:1-正常,0-禁用" json:"status"`
 	IsAdmin   bool           `gorm:"default:false;comment:是否管理员" json:"is_admin"`
 }

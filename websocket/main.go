@@ -39,7 +39,7 @@ func main() {
 
 	// WebSocket 路由
 	r.GET("/ws", HandleWebSocket)
-	r.GET("/ws/counselor/:id", HandleCounselorWebSocket)
+	// r.GET("/ws/counselor/:id", HandleCounselorWebSocket) // TODO: 待实现咨询师专用WebSocket处理
 
 	// 统计信息路由
 	r.GET("/ws/stats", func(c *gin.Context) {

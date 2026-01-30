@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"akrick.com/mychat/admin/backend/cache"
-	"akrick.com/mychat/admin/backend/database"
-	"akrick.com/mychat/admin/backend/models"
-	"akrick.com/mychat/admin/backend/utils"
+	"akrick.com/mychat/cache"
+	"akrick.com/mychat/database"
+	"akrick.com/mychat/models"
+	"akrick.com/mychat/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -140,9 +140,9 @@ func HandleWebSocket(c *gin.Context) {
 
 // WSMessage WebSocket消息结构
 type WSMessage struct {
-	Type      string                 `json:"type"`      // 消息类型: join, message, leave, billing, end
-	SessionID uint                   `json:"session_id"` // 会话ID
-	Data      map[string]interface{} `json:"data"`      // 消息数据
+	Type      string         `json:"type"`      // 消息类型: join, message, leave, billing, end
+	SessionID uint           `json:"session_id"` // 会话ID
+	Data      map[string]any `json:"data"`      // 消息数据
 }
 
 // 读取消息
@@ -294,7 +294,7 @@ func (c *Client) startSession(sessionID uint) {
 	now := time.Now()
 
 	// 更新会话状态
-	database.DB.Model(&models.ChatSession{}).Where("id = ?", sessionID).Updates(map[string]interface{}{
+	database.DB.Model(&models.ChatSession{}).Where("id = ?", sessionID).Updates(map[string]any{
 		"status":     1,
 		"start_time": now,
 	})
@@ -469,10 +469,7 @@ func (c *Client) endSession(sessionID uint, session models.ChatSession) {
 	pricePerMinute := counselor.Price
 	
 	// 计算总金额（按分钟向上取整）
-	durationMinutes := (duration + 59) / 60
-	if durationMinutes < 1 {
-		durationMinutes = 1
-	}
+	durationMinutes := max((duration+59)/60, 1)
 	totalAmount := float64(durationMinutes) * pricePerMinute
 	
 	// 计算平台费用和咨询师费用
@@ -480,11 +477,11 @@ func (c *Client) endSession(sessionID uint, session models.ChatSession) {
 	counselorFee := totalAmount * 0.70
 	
 	// 更新会话
-	database.DB.Model(&session).Updates(map[string]interface{}{
-		"status":      2,
-		"end_time":    now,
-		"duration":    duration,
-		"price":       pricePerMinute,
+	database.DB.Model(&session).Updates(map[string]any{
+		"status":       2,
+		"end_time":     now,
+		"duration":     duration,
+		"price":        pricePerMinute,
 		"total_amount": totalAmount,
 	})
 	
@@ -514,7 +511,7 @@ func (c *Client) endSession(sessionID uint, session models.ChatSession) {
 		database.DB.Create(&account)
 	}
 
-	database.DB.Model(&account).Updates(map[string]interface{}{
+	database.DB.Model(&account).Updates(map[string]any{
 		"total_income": account.TotalIncome + counselorFee,
 		"balance":      account.Balance + counselorFee,
 	})
@@ -564,7 +561,7 @@ func (c *Client) handlePing() {
 }
 
 // 发送消息
-func (c *Client) sendMessage(msgType string, data map[string]interface{}) {
+func (c *Client) sendMessage(msgType string, data map[string]any) {
 	msg, _ := json.Marshal(WSMessage{
 		Type: msgType,
 		Data: data,

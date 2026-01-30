@@ -68,3 +68,19 @@ type PaymentConfig struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
+
+// UserTransaction 用户交易记录表
+type UserTransaction struct {
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	UserID      uint      `gorm:"not null;index;comment:用户ID" json:"user_id"`
+	Type        string    `gorm:"type:varchar(20);not null;comment:交易类型:recharge/consume/refund" json:"type"`
+	Amount      float64   `gorm:"type:decimal(10,2);not null;comment:金额" json:"amount"`
+	Description string    `gorm:"type:varchar(255);comment:交易描述" json:"description"`
+	OrderID     *uint     `gorm:"index;comment:关联订单ID" json:"order_id,omitempty"`
+	Balance     float64   `gorm:"type:decimal(10,2);not null;comment:交易后余额" json:"balance"`
+	CreatedAt   time.Time `json:"created_at"`
+
+	// 关联
+	User  User  `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Order *Order `gorm:"foreignKey:OrderID" json:"order,omitempty"`
+}

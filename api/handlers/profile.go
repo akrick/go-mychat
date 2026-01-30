@@ -6,7 +6,7 @@ import (
 
 	"akrick.com/mychat/database"
 	"akrick.com/mychat/models"
-	"akrick.com/mychat/api/utils"
+	"akrick.com/mychat/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -144,6 +144,131 @@ func UploadAvatar(c *gin.Context) {
 		"msg":  "上传成功",
 		"data": gin.H{
 			"url": url,
+		},
+	})
+}
+
+// RechargeRequest 充值请求
+type RechargeRequest struct {
+	Amount float64 `json:"amount" binding:"required,gt=0"`
+}
+
+// Recharge godoc
+// @Summary 账户充值
+// @Description 充值用户账户余额
+// @Tags 个人中心
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body RechargeRequest true "充值金额"
+// @Success 200 {object} map[string]interface{} "code:200,msg:充值成功"
+// @Router /api/user/recharge [post]
+func Recharge(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var req RechargeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{
+			"code": 400,
+			"msg":  "参数错误: " + err.Error(),
+		})
+		return
+	}
+
+	// 获取用户
+	var user models.User
+	if err := database.DB.First(&user, userID).Error; err != nil {
+		c.JSON(404, gin.H{
+			"code": 404,
+			"msg":  "用户不存在",
+		})
+		return
+	}
+
+	// 更新余额
+	newBalance := user.Balance + req.Amount
+	if err := database.DB.Model(&user).Update("balance", newBalance).Error; err != nil {
+		c.JSON(500, gin.H{
+			"code": 500,
+			"msg":  "充值失败: " + err.Error(),
+		})
+		return
+	}
+
+	// 创建交易记录
+	transaction := models.UserTransaction{
+		UserID:      userID,
+		Type:        "recharge",
+		Amount:      req.Amount,
+		Description: "账户充值",
+		Balance:     newBalance,
+	}
+	if err := database.DB.Create(&transaction).Error; err != nil {
+		// 交易记录创建失败不影响充值
+		fmt.Printf("创建交易记录失败: %v\n", err)
+	}
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "充值成功",
+		"data": gin.H{
+			"balance": newBalance,
+		},
+	})
+}
+
+// GetTransactions godoc
+// @Summary 获取交易记录
+// @Description 获取当前用户的交易记录
+// @Tags 个人中心
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Param type query string false "交易类型:recharge/consume/refund"
+// @Success 200 {object} map[string]interface{} "code:200,msg:获取成功"
+// @Router /api/user/transactions [get]
+func GetTransactions(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "20")
+	transactionType := c.Query("type")
+
+	query := database.DB.Model(&models.UserTransaction{}).Where("user_id = ?", userID)
+
+	// 类型筛选
+	if transactionType != "" {
+		query = query.Where("type = ?", transactionType)
+	}
+
+	var total int64
+	query.Count(&total)
+
+	var transactions []models.UserTransaction
+	offset := 0
+	if page != "1" {
+		p := utils.ParseInt(page)
+		ps := utils.ParseInt(pageSize)
+		offset = (p - 1) * ps
+	}
+
+	ps := utils.ParseInt(pageSize)
+	if err := query.Offset(offset).Limit(ps).Order("created_at DESC").Find(&transactions).Error; err != nil {
+		c.JSON(500, gin.H{
+			"code": 500,
+			"msg":  "查询失败: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "获取成功",
+		"data": gin.H{
+			"transactions": transactions,
+			"total":        total,
 		},
 	})
 }

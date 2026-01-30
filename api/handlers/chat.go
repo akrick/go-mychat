@@ -17,7 +17,7 @@ import (
 // @Security BearerAuth
 // @Param order_id path int true "订单ID"
 // @Success 200 {object} map[string]interface{} "code:200,msg:创建成功,data:{session_id}"
-// @Router /api/chat/session/{order_id}/start [post]
+// @Router /api/chat/start/{order_id} [post]
 func StartChatSession(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	orderID := c.Param("order_id")
@@ -98,7 +98,7 @@ func StartChatSession(c *gin.Context) {
 
 // SendMessage godoc
 // @Summary 发送消息
-// @Description 发送聊天消息
+// @Description 发送聊天消息（注意：实际消息发送通过 WebSocket 服务，此接口为备用）
 // @Tags 聊天
 // @Accept json
 // @Produce json
@@ -214,7 +214,7 @@ func SendMessage(c *gin.Context) {
 // @Param page query int false "页码" default(1)
 // @Param page_size query int false "每页数量" default(20)
 // @Success 200 {object} map[string]interface{} "code:200,msg:获取成功,data:{messages,total}"
-// @Router /api/chat/session/{session_id}/messages [get]
+// @Router /api/chat/messages/{session_id} [get]
 func GetMessages(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	sessionID := c.Param("session_id")
@@ -255,7 +255,7 @@ func GetMessages(c *gin.Context) {
 	}
 
 	ps, _ := strconv.Atoi(pageSize)
-	if err := query.Preload("Sender").Offset(offset).Limit(ps).Order("created_at ASC").Find(&messages).Error; err != nil {
+	if err := query.Preload("Sender").Preload("Session").Preload("Session.Counselor").Offset(offset).Limit(ps).Order("created_at ASC").Find(&messages).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
@@ -282,7 +282,7 @@ func GetMessages(c *gin.Context) {
 // @Security BearerAuth
 // @Param session_id path int true "会话ID"
 // @Success 200 {object} map[string]interface{} "code:200,msg:结束成功"
-// @Router /api/chat/session/{session_id}/end [post]
+// @Router /api/chat/end/{session_id} [post]
 func EndChatSession(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	sessionID := c.Param("session_id")
@@ -319,7 +319,7 @@ func EndChatSession(c *gin.Context) {
 	now := time.Now()
 	duration := int(now.Sub(*session.StartTime).Seconds())
 
-	if err := database.DB.Model(&session).Updates(map[string]interface{}{
+	if err := database.DB.Model(&session).Updates(map[string]any{
 		"status":   2,
 		"end_time": &now,
 		"duration": duration,

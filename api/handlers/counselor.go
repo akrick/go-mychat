@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"akrick.com/mychat/cache"
 	"akrick.com/mychat/database"
@@ -88,20 +89,33 @@ func CreateCounselor(c *gin.Context) {
 
 // GetCounselorList godoc
 // @Summary 获取咨询师列表
-// @Description 获取所有启用的咨询师列表
+// @Description 获取所有启用的咨询师列表，包含统计信息
 // @Tags 咨询师
 // @Accept json
 // @Produce json
 // @Param page query int false "页码" default(1)
 // @Param page_size query int false "每页数量" default(10)
+// @Param keyword query string false "关键词"
+// @Param sort_by query string false "排序字段(rating,price,service_count)" default(rating)
+// @Param sort_order query string false "排序方式(asc,desc)" default(desc)
 // @Success 200 {object} map[string]interface{} "code:200,msg:获取成功,data:{counselors,total}"
 // @Router /api/counselor/list [get]
 func GetCounselorList(c *gin.Context) {
 	page := c.DefaultQuery("page", "1")
 	pageSize := c.DefaultQuery("page_size", "10")
+	keyword := c.Query("keyword")
+	sortBy := c.DefaultQuery("sort_by", "rating")
+	sortOrder := c.DefaultQuery("sort_order", "desc")
 
 	var total int64
 	query := database.DB.Model(&models.Counselor{}).Where("status = ?", 1)
+
+	// 关键词搜索
+	if keyword != "" {
+		query = query.Where("name LIKE ? OR specialty LIKE ? OR title LIKE ?",
+			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
+
 	query.Count(&total)
 
 	var counselors []models.Counselor
@@ -113,12 +127,63 @@ func GetCounselorList(c *gin.Context) {
 	}
 
 	ps, _ := strconv.Atoi(pageSize)
-	if err := query.Offset(offset).Limit(ps).Order("rating DESC, created_at DESC").Find(&counselors).Error; err != nil {
+
+	// 构建排序
+	orderClause := "rating DESC, created_at DESC"
+	validSortFields := map[string]bool{"rating": true, "price": true, "service_count": true, "created_at": true}
+	if validSortFields[sortBy] {
+		if sortOrder == "asc" {
+			orderClause = sortBy + " ASC"
+		} else {
+			orderClause = sortBy + " DESC"
+		}
+	}
+
+	// 先查询基础数据
+	if err := query.Offset(offset).Limit(ps).Order(orderClause).Find(&counselors).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
 			"msg":  "查询失败: " + err.Error(),
 		})
 		return
+	}
+
+	// 为每个咨询师添加统计信息
+	counselorIDs := make([]uint, len(counselors))
+	for i, counselor := range counselors {
+		counselorIDs[i] = counselor.ID
+	}
+
+	// 批量查询统计信息
+	var statsList []models.CounselorStatistics
+	database.DB.Where("counselor_id IN ?", counselorIDs).Find(&statsList)
+	statsMap := make(map[uint]models.CounselorStatistics)
+	for _, stats := range statsList {
+		statsMap[stats.CounselorID] = stats
+	}
+
+	// 填充统计数据
+	for i := range counselors {
+		if stats, ok := statsMap[counselors[i].ID]; ok {
+			counselors[i].ServiceCount = stats.CompletedOrders
+			counselors[i].ReviewCount = stats.ReviewCount
+		}
+
+		// 推荐逻辑：评分大于4.5且已完成订单数大于5
+		counselors[i].IsRecommended = counselors[i].Rating >= 4.5 && counselors[i].ServiceCount >= 5
+	}
+
+	// 如果按服务数排序，需要重新排序
+	if sortBy == "service_count" {
+		if sortOrder == "asc" {
+			sort.Slice(counselors, func(i, j int) bool {
+				return counselors[i].ServiceCount < counselors[j].ServiceCount
+			})
+		} else {
+			sort.Slice(counselors, func(i, j int) bool {
+				return counselors[i].ServiceCount > counselors[j].ServiceCount
+			})
+		}
 	}
 
 	c.JSON(200, gin.H{
@@ -321,5 +386,66 @@ func DeleteCounselor(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"code": 200,
 		"msg":  "删除成功",
+	})
+}
+
+// GetCounselorReviews godoc
+// @Summary 获取咨询师评价列表
+// @Description 获取指定咨询师的公开评价列表
+// @Tags 咨询师
+// @Accept json
+// @Produce json
+// @Param id path int true "咨询师ID"
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(10)
+// @Success 200 {object} map[string]interface{} "code:200,msg:获取成功,data:{reviews,total}"
+// @Router /api/counselor/{id}/reviews [get]
+func GetCounselorReviews(c *gin.Context) {
+	counselorID := c.Param("id")
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("page_size", "10")
+
+	// 验证咨询师存在
+	var counselor models.Counselor
+	if err := database.DB.First(&counselor, counselorID).Error; err != nil {
+		c.JSON(404, gin.H{
+			"code": 404,
+			"msg":  "咨询师不存在",
+		})
+		return
+	}
+
+	var total int64
+	query := database.DB.Model(&models.CounselorReview{}).
+		Where("counselor_id = ? AND is_visible = ?", counselorID, true)
+	query.Count(&total)
+
+	var reviews []models.CounselorReview
+	offset := 0
+	if page != "1" {
+		p, _ := strconv.Atoi(page)
+		ps, _ := strconv.Atoi(pageSize)
+		offset = (p - 1) * ps
+	}
+
+	ps, _ := strconv.Atoi(pageSize)
+	if err := query.Offset(offset).Limit(ps).
+		Preload("User").
+		Order("created_at DESC").
+		Find(&reviews).Error; err != nil {
+		c.JSON(500, gin.H{
+			"code": 500,
+			"msg":  "查询失败: " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "获取成功",
+		"data": gin.H{
+			"reviews": reviews,
+			"total":   total,
+		},
 	})
 }

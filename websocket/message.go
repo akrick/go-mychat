@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"akrick.com/mychat/admin/backend/database"
-	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/database"
+	"akrick.com/mychat/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -180,7 +180,7 @@ func (mh *MessageHandler) handleRead(c *Client, wsMsg WSMessage) {
 }
 
 // BroadcastUserMessage 向指定用户广播消息
-func BroadcastUserMessage(userID uint, msgType string, data map[string]interface{}) {
+func BroadcastUserMessage(userID uint, msgType string, data map[string]any) {
 	globalHub.mu.RLock()
 	defer globalHub.mu.RUnlock()
 

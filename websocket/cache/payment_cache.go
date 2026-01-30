@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
-	"akrick.com/mychat/admin/backend/database"
-	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/database"
+	"akrick.com/mychat/models"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -24,7 +24,7 @@ func GetPaymentWithCache(ctx context.Context, paymentID uint) (*models.Payment, 
 	cacheKey := fmt.Sprintf("payment:%d", paymentID)
 
 	// 使用SingleFlight防止缓存穿透
-	result, err, _ := paymentGroup.Do(cacheKey, func() (interface{}, error) {
+	result, err, _ := paymentGroup.Do(cacheKey, func() (any, error) {
 		// 先从缓存获取
 		_, err := Rdb.Get(ctx, cacheKey).Result()
 		if err == nil {

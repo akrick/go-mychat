@@ -45,7 +45,7 @@ type ChatMessage struct {
 // ChatBilling 聊天计费记录表
 type ChatBilling struct {
 	ID              uint      `gorm:"primaryKey" json:"id"`
-	SessionID       uint      `gorm:"not null;uniqueIndex;index;comment:会话ID" json:"session_id"`
+	SessionID       uint      `gorm:"not null;uniqueIndex;comment:会话ID" json:"session_id"`
 	OrderID         uint      `gorm:"not null;index;comment:关联订单ID" json:"order_id"`
 	UserID          uint      `gorm:"not null;index;comment:用户ID" json:"user_id"`
 	CounselorID     uint      `gorm:"not null;index;comment:咨询师ID" json:"counselor_id"`
@@ -69,7 +69,7 @@ type ChatBilling struct {
 // CounselorAccount 咨询师账户表
 type CounselorAccount struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
-	CounselorID  uint      `gorm:"not null;uniqueIndex;index;comment:咨询师ID" json:"counselor_id"`
+	CounselorID  uint      `gorm:"not null;uniqueIndex;comment:咨询师ID" json:"counselor_id"`
 	TotalIncome  float64   `gorm:"type:decimal(10,2);default:0;comment:总收入" json:"total_income"`
 	Withdrawn    float64   `gorm:"type:decimal(10,2);default:0;comment:已提现" json:"withdrawn"`
 	Balance      float64   `gorm:"type:decimal(10,2);default:0;comment:可用余额" json:"balance"`
@@ -78,6 +78,25 @@ type CounselorAccount struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 
 	// 关联
+	Counselor Counselor `gorm:"foreignKey:CounselorID" json:"counselor,omitempty"`
+}
+
+// CounselorReview 咨询师评价表
+type CounselorReview struct {
+	ID         uint      `gorm:"primaryKey" json:"id"`
+	OrderID    uint      `gorm:"not null;uniqueIndex;comment:订单ID" json:"order_id"`
+	UserID     uint      `gorm:"not null;index;comment:用户ID" json:"user_id"`
+	CounselorID uint     `gorm:"not null;index;comment:咨询师ID" json:"counselor_id"`
+	Rating     int       `gorm:"not null;comment:评分(1-5)" json:"rating"`
+	Comment    string    `gorm:"type:text;comment:评价内容" json:"comment"`
+	IsAnonymous bool     `gorm:"default:false;comment:是否匿名" json:"is_anonymous"`
+	IsVisible  bool      `gorm:"default:true;comment:是否显示" json:"is_visible"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+
+	// 关联
+	Order     Order     `gorm:"foreignKey:OrderID" json:"order,omitempty"`
+	User      User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
 	Counselor Counselor `gorm:"foreignKey:CounselorID" json:"counselor,omitempty"`
 }
 

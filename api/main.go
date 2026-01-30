@@ -85,10 +85,13 @@ func main() {
 	r.PUT("/api/user/profile", middleware.AuthMiddleware(), handlers.UpdateProfile)
 	r.POST("/api/user/password", middleware.AuthMiddleware(), handlers.ChangePassword)
 	r.POST("/api/upload/avatar", middleware.AuthMiddleware(), handlers.UploadAvatar)
+	r.POST("/api/user/recharge", middleware.AuthMiddleware(), handlers.Recharge)
+	r.GET("/api/user/transactions", middleware.AuthMiddleware(), handlers.GetTransactions)
 
 	// 咨询师接口（只读）
 	r.GET("/api/counselor/list", handlers.GetCounselorList)
 	r.GET("/api/counselor/:id", handlers.GetCounselorDetail)
+	r.GET("/api/counselor/:id/reviews", handlers.GetCounselorReviews)
 
 	// 订单接口
 	r.POST("/api/order/create", middleware.AuthMiddleware(), handlers.CreateOrder)
@@ -112,9 +115,10 @@ func main() {
 	r.DELETE("/api/notification/:id", middleware.AuthMiddleware(), handlers.DeleteNotification)
 
 	// 聊天接口（部分功能依赖 WebSocket 服务）
-	r.POST("/api/chat/session/:order_id/start", middleware.AuthMiddleware(), handlers.StartChatSession)
-	r.GET("/api/chat/session/:session_id/messages", middleware.AuthMiddleware(), handlers.GetMessages)
-	r.POST("/api/chat/session/:session_id/end", middleware.AuthMiddleware(), handlers.EndChatSession)
+	r.POST("/api/chat/start/:order_id", middleware.AuthMiddleware(), handlers.StartChatSession)
+	r.POST("/api/chat/session/:session_id/message", middleware.AuthMiddleware(), handlers.SendMessage)
+	r.GET("/api/chat/messages/:session_id", middleware.AuthMiddleware(), handlers.GetMessages)
+	r.POST("/api/chat/end/:session_id", middleware.AuthMiddleware(), handlers.EndChatSession)
 	r.GET("/api/chat/sessions", middleware.AuthMiddleware(), handlers.GetChatSessions)
 
 	// 文件接口

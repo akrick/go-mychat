@@ -3,7 +3,7 @@ package handlers
 import (
 	"akrick.com/mychat/database"
 	"akrick.com/mychat/models"
-	"akrick.com/mychat/api/utils"
+	"akrick.com/mychat/utils"
 	"github.com/gin-gonic/gin"
 	"strconv"
 )

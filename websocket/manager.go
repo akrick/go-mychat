@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"akrick.com/mychat/admin/backend/cache"
-	"akrick.com/mychat/admin/backend/database"
-	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/cache"
+	"akrick.com/mychat/database"
+	"akrick.com/mychat/models"
 )
 
 // SessionManager 会话管理器
@@ -191,11 +191,11 @@ func (sm *SessionManager) checkTimeoutSessions() {
 }
 
 // GetSessionStats 获取会话统计
-func (sm *SessionManager) GetSessionStats() map[string]interface{} {
+func (sm *SessionManager) GetSessionStats() map[string]any {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 
-	stats := map[string]interface{}{
+	stats := map[string]any{
 		"active_sessions": len(sm.activeSessions),
 		"total_duration":  0,
 		"total_amount":    0.0,
@@ -204,11 +204,8 @@ func (sm *SessionManager) GetSessionStats() map[string]interface{} {
 	now := time.Now()
 	for _, session := range sm.activeSessions {
 		duration := now.Sub(session.StartTime)
-		durationMinutes := int(duration.Minutes())
-		if durationMinutes < 1 {
-			durationMinutes = 1
-		}
-		
+		durationMinutes := max(int(duration.Minutes()), 1)
+
 		stats["total_duration"] = stats["total_duration"].(int) + durationMinutes
 		stats["total_amount"] = stats["total_amount"].(float64) + float64(durationMinutes)*session.PricePerMin
 	}
@@ -219,7 +216,7 @@ func (sm *SessionManager) GetSessionStats() map[string]interface{} {
 // BroadcastSessionStats 广播会话统计
 func BroadcastSessionStats() {
 	stats := sessionManager.GetSessionStats()
-	statsData, _ := json.Marshal(map[string]interface{}{
+	statsData, _ := json.Marshal(map[string]any{
 		"type": "session_stats",
 		"data": stats,
 	})
@@ -228,7 +225,7 @@ func BroadcastSessionStats() {
 }
 
 // GetCounselorEarnings 获取咨询师收益统计
-func GetCounselorEarnings(counselorID uint) map[string]interface{} {
+func GetCounselorEarnings(counselorID uint) map[string]any {
 	var account models.CounselorAccount
 	database.DB.Where("counselor_id = ?", counselorID).First(&account)
 
@@ -242,7 +239,7 @@ func GetCounselorEarnings(counselorID uint) map[string]interface{} {
 		Where("counselor_id = ? AND status = 2", counselorID).
 		Scan(&totalDuration)
 
-	return map[string]interface{}{
+	return map[string]any{
 		"total_income":   account.TotalIncome,
 		"balance":        account.Balance,
 		"withdrawn":      account.Withdrawn,

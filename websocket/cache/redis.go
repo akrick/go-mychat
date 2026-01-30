@@ -7,8 +7,8 @@ import (
 	"math/rand"
 	"time"
 
-	"akrick.com/mychat/admin/backend/database"
-	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/database"
+	"akrick.com/mychat/models"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/sync/singleflight"
 )
@@ -57,7 +57,7 @@ func GetUserInfoWithCache(ctx context.Context, userID uint) (*UserInfoCache, err
 	cacheKey := getUserCacheKey(userID)
 
 	// 使用singleflight防止缓存穿透
-	result, err, _ := Request.Do(cacheKey, func() (interface{}, error) {
+	result, err, _ := Request.Do(cacheKey, func() (any, error) {
 		// 1. 先从缓存获取
 		cachedData, err := Rdb.Get(ctx, cacheKey).Result()
 		if err == nil {

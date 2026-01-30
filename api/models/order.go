@@ -47,4 +47,28 @@ type Counselor struct {
 	Status    int       `gorm:"not null;default:1;comment:状态:1-启用,0-禁用" json:"status"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+
+	// 统计字段（不持久化到数据库）
+	ServiceCount int `gorm:"-" json:"service_count"`      // 服务人数
+	ReviewCount  int `gorm:"-" json:"review_count"`       // 评价数量
+	IsRecommended bool `gorm:"-" json:"is_recommended"`  // 是否推荐
+}
+
+// CounselorStatistics 咨询师统计表
+type CounselorStatistics struct {
+	ID              uint      `gorm:"primaryKey" json:"id"`
+	CounselorID     uint      `gorm:"not null;uniqueIndex;comment:咨询师ID" json:"counselor_id"`
+	TotalOrders     int       `gorm:"not null;default:0;comment:总订单数" json:"total_orders"`
+	CompletedOrders int       `gorm:"not null;default:0;comment:已完成订单数" json:"completed_orders"`
+	CancelledOrders int       `gorm:"not null;default:0;comment:已取消订单数" json:"cancelled_orders"`
+	TotalDuration   int       `gorm:"not null;default:0;comment:总咨询时长(分钟)" json:"total_duration"`
+	TotalAmount     float64   `gorm:"type:decimal(12,2);not null;default:0.00;comment:总金额" json:"total_amount"`
+	ReviewCount     int       `gorm:"not null;default:0;comment:评价数量" json:"review_count"`
+	AvgRating       float64   `gorm:"type:decimal(3,2);not null;default:0.00;comment:平均评分" json:"avg_rating"`
+	SumRating       int       `gorm:"not null;default:0;comment:总评分" json:"sum_rating"`
+	LastOrderTime   *time.Time `gorm:"comment:最后订单时间" json:"last_order_time"`
+	UpdatedAt       time.Time `json:"updated_at"`
+
+	// 关联
+	Counselor Counselor `gorm:"foreignKey:CounselorID" json:"counselor,omitempty"`
 }

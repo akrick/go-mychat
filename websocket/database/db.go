@@ -18,7 +18,7 @@ func InitDB() error {
 	}
 
 	// 自动迁移表结构
-	err = DB.AutoMigrate(&models.User{}, &models.Counselor{}, &models.Order{}, &models.Payment{}, &models.PaymentConfig{}, &models.Review{}, &models.CounselorStatistics{}, &models.Notification{}, &models.ChatSession{}, &models.ChatMessage{}, &models.File{}, &models.ChatBilling{}, &models.CounselorAccount{}, &models.WithdrawRecord{})
+	err = DB.AutoMigrate(&models.User{}, &models.Counselor{}, &models.Order{}, &models.Payment{}, &models.PaymentConfig{}, &models.Notification{}, &models.ChatSession{}, &models.ChatMessage{}, &models.File{}, &models.ChatBilling{}, &models.CounselorAccount{}, &models.WithdrawRecord{})
 	if err != nil {
 		return fmt.Errorf("failed to migrate database: %w", err)
 	}

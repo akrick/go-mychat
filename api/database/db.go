@@ -23,6 +23,8 @@ func InitDB() error {
 		&models.User{},
 		&models.Counselor{},
 		&models.CounselorAccount{},
+		&models.CounselorStatistics{},
+		&models.CounselorReview{},
 
 		// 订单相关
 		&models.Order{},
@@ -33,6 +35,7 @@ func InitDB() error {
 		&models.ChatSession{},
 		&models.ChatMessage{},
 		&models.ChatBilling{},
+		&models.WithdrawRecord{},
 
 		// 文件和通知
 		&models.File{},

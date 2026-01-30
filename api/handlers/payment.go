@@ -8,6 +8,7 @@ import (
 	"akrick.com/mychat/cache"
 	"akrick.com/mychat/database"
 	"akrick.com/mychat/models"
+	"akrick.com/mychat/utils"
 	"github.com/gin-gonic/gin"
 )
 

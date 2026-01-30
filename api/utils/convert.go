@@ -14,6 +14,11 @@ func ParseStringToInt(s string) int {
 	return i
 }
 
+// ParseInt 解析字符串为整数（别名）
+func ParseInt(s string) int {
+	return ParseStringToInt(s)
+}
+
 // ParseStringToUint 将字符串转换为无符号整数
 func ParseStringToUint(s string) uint {
 	if s == "" {

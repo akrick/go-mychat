@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"akrick.com/mychat/admin/backend/models"
+	"akrick.com/mychat/models"
 )
 
 // GetChatSessionFromCache 从缓存获取聊天会话

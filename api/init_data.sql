@@ -482,3 +482,15 @@ INSERT INTO sys_configs (config_key, config_name, config_type, config_val, is_pu
 ('withdraw_fee', '提现手续费', 'number', '0', FALSE, '提现手续费比例'),
 ('system_notice', '系统公告', 'string', '', TRUE, '系统公告内容')
 ON DUPLICATE KEY UPDATE config_key = VALUES(config_key);
+
+-- 插入测试咨询师数据
+INSERT INTO counselors (name, title, avatar, bio, specialty, price, years_exp, rating, status) VALUES
+('张明', '国家二级心理咨询师', 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&h=300&fit=crop&crop=face', '拥有10年心理咨询经验，擅长情绪管理、人际关系、婚姻家庭咨询，已帮助超过2000名来访者走出困境。', '情绪管理,人际关系,婚姻家庭', 2.50, 10, 4.90, 1),
+('李雪', '高级心理咨询师', 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=300&fit=crop&crop=face', '专注于青少年心理咨询，擅长学习压力、青春期困惑、亲子关系等领域，具有丰富的临床经验。', '青少年心理,学习压力,亲子关系', 3.00, 8, 4.85, 1),
+('王芳', '婚姻家庭咨询师', 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=300&h=300&fit=crop&crop=face', '专业从事婚姻家庭咨询15年，擅长夫妻关系改善、离婚危机干预、家庭矛盾调解，帮助众多家庭重获幸福。', '婚姻关系,家庭矛盾,情感咨询', 3.50, 15, 4.95, 1),
+('刘伟', '职业规划咨询师', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face', '职业规划专家，曾任职于多家知名企业HR总监，擅长职业规划、面试辅导、职场人际关系处理。', '职业规划,面试辅导,职场咨询', 4.00, 12, 4.88, 1),
+('陈静', '认知行为治疗师', 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&h=300&fit=crop&crop=face', '认知行为治疗(CBT)专业认证咨询师，擅长焦虑症、抑郁症、强迫症等心理疾病的康复指导。', '焦虑抑郁,强迫症,心理疾病', 5.00, 9, 4.92, 1),
+('赵敏', '儿童心理发展专家', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&h=300&fit=crop&crop=face', '儿童心理学博士，专注于儿童心理发展、学习障碍、多动症、自闭症等问题的早期干预和治疗。', '儿童心理,学习障碍,多动症', 4.50, 7, 4.87, 1),
+('孙涛', '心理危机干预师', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&h=300&fit=crop&crop=face', '心理危机干预专家，处理过大量突发性创伤事件后的心理救援工作，包括自然灾害、事故创伤等。', '危机干预,创伤后应激,创伤修复', 3.80, 11, 4.91, 1),
+('周琳', '艺术治疗师', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&h=300&fit=crop&crop=face', '艺术治疗专业认证咨询师，运用绘画、音乐、舞蹈等艺术形式帮助来访者表达情感、释放压力。', '艺术治疗,压力管理,情感表达', 3.20, 6, 4.84, 1)
+ON DUPLICATE KEY UPDATE name = VALUES(name);
