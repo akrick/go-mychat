@@ -79,3 +79,11 @@ export function showWarning(message) {
 export function showInfo(message) {
   ElMessage.info(message)
 }
+
+/**
+ * 显示错误消息
+ * @param {string} message 错误消息
+ */
+export function showError(message) {
+  ElMessage.error(message)
+}

@@ -62,7 +62,7 @@
                 </template>
                 <el-form :model="profileForm" :rules="profileRules" ref="profileFormRef" label-width="120px" class="profile-form">
                   <el-form-item label="用户名">
-                    <el-input v-model="userInfo?.username" disabled />
+                    <el-input :value="userInfo?.username" disabled />
                   </el-form-item>
                   <el-form-item label="邮箱地址" prop="email">
                     <el-input v-model="profileForm.email" placeholder="请输入邮箱" />

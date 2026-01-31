@@ -70,6 +70,15 @@
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
+import {
+  Phone,
+  ChatDotRound,
+  User,
+  ArrowDown,
+  Document,
+  UserFilled,
+  SwitchButton
+} from '@element-plus/icons-vue'
 import { showSuccess } from '@/utils/errorHandler'
 
 const userStore = useUserStore()

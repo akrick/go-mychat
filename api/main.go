@@ -93,6 +93,13 @@ func main() {
 	r.GET("/api/counselor/:id", handlers.GetCounselorDetail)
 	r.GET("/api/counselor/:id/reviews", handlers.GetCounselorReviews)
 
+	// 咨询师入驻接口
+	r.POST("/api/counselor/application", middleware.AuthMiddleware(), handlers.CreateCounselorApplication)
+	r.GET("/api/counselor/my-application", middleware.AuthMiddleware(), handlers.GetMyApplication)
+	r.GET("/api/counselor/applications", middleware.AuthMiddleware(), handlers.GetAllApplications)
+	r.PUT("/api/counselor/application/:id/review", middleware.AuthMiddleware(), handlers.ReviewApplication)
+	r.POST("/api/counselor/upload-certificate", middleware.AuthMiddleware(), handlers.UploadCertificate)
+
 	// 订单接口
 	r.POST("/api/order/create", middleware.AuthMiddleware(), handlers.CreateOrder)
 	r.GET("/api/order/:id", middleware.AuthMiddleware(), handlers.GetOrderDetail)

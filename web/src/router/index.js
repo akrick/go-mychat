@@ -36,6 +36,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/counselor-application',
+    name: 'CounselorApplication',
+    component: () => import('@/views/CounselorApplication.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/counselor/:id',
     name: 'CounselorDetail',
     component: () => import('@/views/CounselorDetail.vue'),

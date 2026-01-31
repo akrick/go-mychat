@@ -40,10 +40,6 @@
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="orders">
-                    <el-icon><Document /></el-icon>
-                    我的订单
-                  </el-dropdown-item>
                   <el-dropdown-item command="profile">
                     <el-icon><UserFilled /></el-icon>
                     个人中心
@@ -75,7 +71,6 @@ import {
   ChatDotRound,
   User,
   ArrowDown,
-  Document,
   UserFilled,
   SwitchButton
 } from '@element-plus/icons-vue'
@@ -86,9 +81,7 @@ const router = useRouter()
 
 const handleCommand = (command) => {
   console.log('Dropdown command:', command)
-  if (command === 'orders') {
-    router.push('/orders')
-  } else if (command === 'profile') {
+  if (command === 'profile') {
     router.push('/profile')
   } else if (command === 'logout') {
     ElMessageBox.confirm('确定要退出登录吗？', '提示', {

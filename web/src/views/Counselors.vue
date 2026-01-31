@@ -35,6 +35,20 @@
         </el-form>
       </el-card>
 
+      <!-- 咨询师入驻入口 -->
+      <el-card class="join-banner-card">
+        <div class="join-banner">
+          <div class="join-content">
+            <h3>您是心理咨询师？</h3>
+            <p>加入我们的平台，为更多需要帮助的人提供专业的心理咨询服务</p>
+            <el-button type="primary" @click="handleJoinCounselor">
+              <el-icon><UserFilled /></el-icon>
+              申请入驻
+            </el-button>
+          </div>
+        </div>
+      </el-card>
+
       <el-row :gutter="24" v-loading="loading">
         <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6" v-for="counselor in counselors" :key="counselor.id">
           <el-card class="counselor-card" @click="$router.push(`/counselor/${counselor.id}`)" style="cursor: pointer">
@@ -136,20 +150,25 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import {
   User,
+  UserFilled,
   Calendar,
   Search,
   Star,
   ChatDotRound
 } from '@element-plus/icons-vue'
 import { getCounselorList } from '@/api/counselor'
+import { useUserStore } from '@/stores/user'
 import { handleError } from '@/utils/errorHandler'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
 
 const route = useRoute()
+const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false)
 const counselors = ref([])
 const total = ref(0)
@@ -204,6 +223,15 @@ const handleReset = () => {
 const handleSortChange = () => {
   loadCounselors()
 }
+
+const handleJoinCounselor = () => {
+  if (!userStore.token) {
+    ElMessage.warning('请先登录')
+    router.push('/login')
+  } else {
+    router.push('/counselor-application')
+  }
+}
 </script>
 
 <style scoped>
@@ -244,6 +272,40 @@ const handleSortChange = () => {
   margin-bottom: 30px;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.join-banner-card {
+  margin-bottom: 30px;
+  border: none;
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.join-banner-card :deep(.el-card__body) {
+  padding: 30px;
+}
+
+.join-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+}
+
+.join-banner-content h3 {
+  font-size: 28px;
+  color: white;
+  margin-bottom: 12px;
+}
+
+.join-banner-content > p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 20px;
+}
+
+.join-banner-content .el-button {
+  min-width: 140px;
 }
 
 .counselor-card {

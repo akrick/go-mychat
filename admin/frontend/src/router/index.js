@@ -45,6 +45,12 @@ const routes = [
         meta: { title: '聊天记录', icon: 'ChatDotRound' }
       },
       {
+        path: 'application',
+        name: 'Application',
+        component: () => import('@/views/business/application/index.vue'),
+        meta: { title: '入驻申请', icon: 'UserFilled' }
+      },
+      {
         path: 'roles',
         name: 'Roles',
         component: () => import('@/views/system/roles/index.vue'),

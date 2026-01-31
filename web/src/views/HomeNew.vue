@@ -72,6 +72,47 @@
       </div>
     </div>
 
+    <!-- 咨询师入驻入口 -->
+    <div class="counselor-join-section">
+      <div class="container">
+        <el-card class="join-card">
+          <el-row :gutter="40" align="middle">
+            <el-col :span="12">
+              <div class="join-content">
+                <h2>加入我们，成为专业咨询师</h2>
+                <p>如果您持有心理咨询师相关资质证书，欢迎加入我们的平台，为更多需要帮助的人提供专业的心理咨询服务</p>
+                <div class="join-benefits">
+                  <div class="benefit-item">
+                    <el-icon><Check /></el-icon>
+                    <span>专业平台，稳定客源</span>
+                  </div>
+                  <div class="benefit-item">
+                    <el-icon><Check /></el-icon>
+                    <span>灵活工作时间</span>
+                  </div>
+                  <div class="benefit-item">
+                    <el-icon><Check /></el-icon>
+                    <span>高额收入分成</span>
+                  </div>
+                  <div class="benefit-item">
+                    <el-icon><Check /></el-icon>
+                    <span>专业培训支持</span>
+                  </div>
+                </div>
+              </div>
+            </el-col>
+            <el-col :span="12" class="join-action">
+              <h3>立即申请入驻</h3>
+              <p>填写基本信息，上传资质证书，审核通过后即可开始接单</p>
+              <el-button type="primary" size="large" @click="handleJoinCounselor">
+                申请入驻
+              </el-button>
+            </el-col>
+          </el-row>
+        </el-card>
+      </div>
+    </div>
+
     <!-- 咨询流程 -->
     <div class="process-section">
       <div class="container">
@@ -143,7 +184,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, UserFilled, Clock, Lock, Star, Search, Calendar, ChatDotRound, CircleCheck } from '@element-plus/icons-vue'
+import { User, UserFilled, Clock, Lock, Star, Search, Calendar, ChatDotRound, CircleCheck, Check } from '@element-plus/icons-vue'
 import { getCounselorList } from '@/api/counselor'
 import { useUserStore } from '@/stores/user'
 import { handleError, showWarning } from '@/utils/errorHandler'
@@ -330,9 +371,18 @@ const handleCounselorClick = (counselorId) => {
   }
 }
 
+const handleJoinCounselor = () => {
+  if (!userStore.token) {
+    showWarning('请先登录')
+    router.push('/login')
+  } else {
+    router.push('/counselor-application')
+  }
+}
+
 // 处理轮播图指示器点击，第2个指示器跳转到个人中心
 const handleCarouselChange = (index) => {
-  if (index === 1) {
+  if (index === 1 && router.currentRoute.value.path !== '/profile') {
     if (!userStore.token) {
       showWarning('请先登录')
       router.push('/login')
@@ -575,6 +625,76 @@ const handleCarouselChange = (index) => {
   opacity: 0.9;
   position: relative;
   z-index: 1;
+}
+
+.counselor-join-section {
+  padding: 60px 0;
+}
+
+.join-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  overflow: hidden;
+}
+
+.join-card :deep(.el-card__body) {
+  padding: 40px;
+}
+
+.join-content h2 {
+  font-size: 32px;
+  color: white;
+  margin-bottom: 16px;
+}
+
+.join-content > p {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 30px;
+  line-height: 1.6;
+}
+
+.join-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.benefit-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  font-size: 15px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 10px 20px;
+  border-radius: 20px;
+}
+
+.benefit-item .el-icon {
+  font-size: 18px;
+}
+
+.join-action {
+  text-align: center;
+  padding-left: 40px;
+}
+
+.join-action h3 {
+  font-size: 28px;
+  color: white;
+  margin-bottom: 12px;
+}
+
+.join-action > p {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 24px;
+}
+
+.join-action .el-button {
+  min-width: 160px;
+  font-size: 16px;
+  padding: 14px 40px;
 }
 
 .counselors-section {

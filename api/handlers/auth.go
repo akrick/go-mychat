@@ -259,10 +259,13 @@ func GetUserInfo(c *gin.Context) {
 		"code": 200,
 		"msg":  msg,
 		"data": gin.H{
+			"id":       user.ID,
 			"user_id":  user.ID,
 			"username": user.Username,
 			"email":    user.Email,
 			"phone":    user.Phone,
+			"avatar":   user.Avatar,
+			"balance":  user.Balance,
 		},
 	})
 }

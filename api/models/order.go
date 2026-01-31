@@ -36,6 +36,7 @@ type Order struct {
 // Counselor 咨询师表
 type Counselor struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
+	UserID    uint      `gorm:"index;comment:用户ID" json:"user_id"`
 	Name      string    `gorm:"type:varchar(50);not null" json:"name"`
 	Title     string    `gorm:"type:varchar(50);comment:职称" json:"title"`
 	Avatar    string    `gorm:"type:varchar(255);comment:头像" json:"avatar"`
@@ -52,6 +53,9 @@ type Counselor struct {
 	ServiceCount int `gorm:"-" json:"service_count"`      // 服务人数
 	ReviewCount  int `gorm:"-" json:"review_count"`       // 评价数量
 	IsRecommended bool `gorm:"-" json:"is_recommended"`  // 是否推荐
+
+	// 关联
+	User User `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
 // CounselorStatistics 咨询师统计表

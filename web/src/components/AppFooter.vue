@@ -27,8 +27,14 @@
               <ul class="footer-links">
                 <li><router-link to="/">首页</router-link></li>
                 <li><router-link to="/counselors">咨询师</router-link></li>
-                <li><router-link to="/orders">我的订单</router-link></li>
-                <li><router-link to="/profile">个人中心</router-link></li>
+                <li>
+                  <router-link v-if="userStore.token" to="/orders">我的订单</router-link>
+                  <a v-else href="#" @click.prevent="handleRequireLogin">我的订单</a>
+                </li>
+                <li>
+                  <router-link v-if="userStore.token" to="/profile">个人中心</router-link>
+                  <a v-else href="#" @click.prevent="handleRequireLogin">个人中心</a>
+                </li>
               </ul>
             </div>
           </el-col>
@@ -93,9 +99,12 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import { showInfo } from '@/utils/errorHandler'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const handleShowInfo = (type) => {
   if (type === 'privacy') {
@@ -111,6 +120,11 @@ const handleShowInfo = (type) => {
   } else if (type === 'contact') {
     showInfo('客服邮箱：service@mychat.com')
   }
+}
+
+const handleRequireLogin = () => {
+  ElMessage.warning('请先登录后访问')
+  router.push('/login')
 }
 </script>
 

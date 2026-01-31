@@ -25,6 +25,7 @@ func InitDB() error {
 		&models.CounselorAccount{},
 		&models.CounselorStatistics{},
 		&models.CounselorReview{},
+		&models.CounselorApplication{},
 
 		// 订单相关
 		&models.Order{},
