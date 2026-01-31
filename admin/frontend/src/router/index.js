@@ -21,6 +21,12 @@ const routes = [
         meta: { title: '数据看板', icon: 'DataAnalysis' }
       },
       {
+        path: 'admin',
+        name: 'Admin',
+        component: () => import('@/views/system/admin/index.vue'),
+        meta: { title: '管理员管理', icon: 'UserFilled' }
+      },
+      {
         path: 'user',
         name: 'User',
         component: () => import('@/views/system/user/index.vue'),

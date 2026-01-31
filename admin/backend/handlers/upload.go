@@ -13,6 +13,113 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// UploadAvatar godoc
+// @Summary 上传头像
+// @Description 上传头像图片
+// @Tags 文件
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param file formData file true "头像图片"
+// @Success 200 {object} map[string]interface{} "code:200,msg:上传成功,data:{url}"
+// @Router /api/admin/upload/image [post]
+func UploadAvatar(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+
+	// 获取文件
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(400, gin.H{
+			"code": 400,
+			"msg":  "文件不存在: " + err.Error(),
+		})
+		return
+	}
+
+	// 检查文件大小（限制2MB）
+	if fileHeader.Size > 2*1024*1024 {
+		c.JSON(400, gin.H{
+			"code": 400,
+			"msg":  "文件大小不能超过2MB",
+		})
+		return
+	}
+
+	// 检查文件类型
+	ext := filepath.Ext(fileHeader.Filename)
+	validExtensions := map[string]bool{
+		".jpg":  true,
+		".jpeg": true,
+		".png":  true,
+		".webp": true,
+		".gif":  true,
+	}
+	if !validExtensions[strings.ToLower(ext)] {
+		c.JSON(400, gin.H{
+			"code": 400,
+			"msg":  "不支持的图片格式",
+		})
+		return
+	}
+
+	// 创建头像上传目录
+	uploadDir := fmt.Sprintf("./uploads/avatar/%d", userID.(uint))
+	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		c.JSON(500, gin.H{
+			"code": 500,
+			"msg":  "创建目录失败: " + err.Error(),
+		})
+		return
+	}
+
+	// 生成新文件名
+	newFileName := fmt.Sprintf("avatar_%d%s", time.Now().UnixNano(), ext)
+	filePath := filepath.Join(uploadDir, newFileName)
+
+	// 打开文件
+	src, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(500, gin.H{
+			"code": 500,
+			"msg":  "打开文件失败: " + err.Error(),
+		})
+		return
+	}
+	defer src.Close()
+
+	// 创建目标文件
+	dst, err := os.Create(filePath)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"code": 500,
+			"msg":  "创建文件失败: " + err.Error(),
+		})
+		return
+	}
+	defer dst.Close()
+
+	// 复制文件内容
+	if _, err := io.Copy(dst, src); err != nil {
+		c.JSON(500, gin.H{
+			"code": 500,
+			"msg":  "保存文件失败: " + err.Error(),
+		})
+		return
+	}
+
+	// 构建文件URL
+	fileURL := fmt.Sprintf("/uploads/avatar/%d/%s", userID.(uint), newFileName)
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "上传成功",
+		"data": gin.H{
+			"url":      fileURL,
+			"file_url": fileURL,
+		},
+	})
+}
+
 // UploadFile godoc
 // @Summary 上传文件
 // @Description 上传文件

@@ -1,5 +1,5 @@
 <template>
-  <div class="user-container">
+  <div class="admin-container">
     <el-card>
       <el-form :inline="true" :model="queryParams" class="demo-form-inline">
         <el-form-item label="搜索">
@@ -14,7 +14,7 @@
         <el-form-item>
           <el-button type="primary" @click="handleQuery">查询</el-button>
           <el-button @click="resetQuery">重置</el-button>
-          <el-button type="success" @click="handleAdd">新增用户</el-button>
+          <el-button type="success" @click="handleAdd">新增管理员</el-button>
         </el-form-item>
       </el-form>
 
@@ -26,7 +26,7 @@
         <el-table-column label="头像" width="80">
           <template #default="{ row }">
             <el-avatar v-if="row.avatar" :src="row.avatar" />
-            <el-avatar v-else>U</el-avatar>
+            <el-avatar v-else>A</el-avatar>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="80">
@@ -36,18 +36,18 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="管理员" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.is_admin ? 'warning' : 'info'">
-              {{ row.is_admin ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="180" />
-        <el-table-column label="操作" width="280" fixed="right">
+        <el-table-column label="操作" width="320" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="handleEdit(row)">编辑</el-button>
             <el-button size="small" type="primary" @click="handleResetPassword(row)">重置密码</el-button>
+            <el-button
+              size="small"
+              :type="row.status === 1 ? 'warning' : 'success'"
+              @click="handleToggleStatus(row)"
+            >
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
             <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -64,7 +64,7 @@
       />
     </el-card>
 
-    <!-- 新增/编辑用户对话框 -->
+    <!-- 新增/编辑管理员对话框 -->
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="用户名" prop="username">
@@ -87,9 +87,6 @@
             <el-radio :label="1">正常</el-radio>
             <el-radio :label="0">禁用</el-radio>
           </el-radio-group>
-        </el-form-item>
-        <el-form-item label="管理员" prop="is_admin">
-          <el-switch v-model="form.is_admin" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -116,7 +113,14 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getUserList, createUser, updateUser, deleteUser, resetPassword } from '@/api/adminUser'
+import {
+  getAdminList,
+  createAdmin,
+  updateAdmin,
+  deleteAdmin,
+  resetAdminPassword,
+  toggleAdminStatus
+} from '@/api/adminManager'
 import ImageUpload from '@/components/ImageUpload.vue'
 
 const loading = ref(false)
@@ -142,8 +146,7 @@ const form = reactive({
   email: '',
   phone: '',
   avatar: '',
-  status: 1,
-  is_admin: false
+  status: 1
 })
 
 const passwordForm = reactive({
@@ -164,11 +167,11 @@ const passwordRules = {
 const handleQuery = async () => {
   loading.value = true
   try {
-    const res = await getUserList(queryParams)
-    tableData.value = res.data?.users || []
+    const res = await getAdminList(queryParams)
+    tableData.value = res.data?.admins || res.data?.users || []
     total.value = res.data?.total || 0
   } catch (error) {
-    ElMessage.error(error.message || '获取用户列表失败')
+    ElMessage.error(error.message || '获取管理员列表失败')
   } finally {
     loading.value = false
   }
@@ -182,7 +185,7 @@ const resetQuery = () => {
 }
 
 const handleAdd = () => {
-  dialogTitle.value = '新增用户'
+  dialogTitle.value = '新增管理员'
   Object.assign(form, {
     id: null,
     username: '',
@@ -190,14 +193,13 @@ const handleAdd = () => {
     email: '',
     phone: '',
     avatar: '',
-    status: 1,
-    is_admin: false
+    status: 1
   })
   dialogVisible.value = true
 }
 
 const handleEdit = (row) => {
-  dialogTitle.value = '编辑用户'
+  dialogTitle.value = '编辑管理员'
   Object.assign(form, {
     id: row.id,
     username: row.username,
@@ -205,8 +207,7 @@ const handleEdit = (row) => {
     email: row.email,
     phone: row.phone,
     avatar: row.avatar,
-    status: row.status,
-    is_admin: row.is_admin
+    status: row.status
   })
   dialogVisible.value = true
 }
@@ -215,10 +216,10 @@ const handleSubmit = async () => {
   try {
     await formRef.value.validate()
     if (form.id) {
-      await updateUser(form.id, form)
+      await updateAdmin(form.id, form)
       ElMessage.success('更新成功')
     } else {
-      await createUser(form)
+      await createAdmin(form)
       ElMessage.success('创建成功')
     }
     dialogVisible.value = false
@@ -229,13 +230,13 @@ const handleSubmit = async () => {
 }
 
 const handleDelete = (row) => {
-  ElMessageBox.confirm('确定要删除该用户吗?', '提示', {
+  ElMessageBox.confirm('确定要删除该管理员吗?', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(async () => {
     try {
-      await deleteUser(row.id)
+      await deleteAdmin(row.id)
       ElMessage.success('删除成功')
       handleQuery()
     } catch (error) {
@@ -246,19 +247,37 @@ const handleDelete = (row) => {
 
 const handleResetPassword = (row) => {
   Object.assign(passwordForm, { password: '' })
-  passwordForm.currentUserId = row.id
+  passwordForm.currentAdminId = row.id
   passwordDialogVisible.value = true
 }
 
 const handlePasswordSubmit = async () => {
   try {
     await passwordFormRef.value.validate()
-    await resetPassword(passwordForm.currentUserId, passwordForm)
+    await resetAdminPassword(passwordForm.currentAdminId, passwordForm)
     ElMessage.success('密码重置成功')
     passwordDialogVisible.value = false
   } catch (error) {
     ElMessage.error(error.message || '重置失败')
   }
+}
+
+const handleToggleStatus = (row) => {
+  const newStatus = row.status === 1 ? 0 : 1
+  const action = newStatus === 1 ? '启用' : '禁用'
+  ElMessageBox.confirm(`确定要${action}该管理员吗?`, '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await toggleAdminStatus(row.id, { status: newStatus })
+      ElMessage.success(`${action}成功`)
+      handleQuery()
+    } catch (error) {
+      ElMessage.error(error.message || `${action}失败`)
+    }
+  })
 }
 
 onMounted(() => {
@@ -267,7 +286,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.user-container {
+.admin-container {
   padding: 20px;
 }
 

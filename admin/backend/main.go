@@ -25,11 +25,16 @@ func main() {
 	// 创建路由
 	r := gin.Default()
 
+	// 提供静态文件服务
+	r.Static("/uploads", "./uploads")
+
 	// CORS 中间件
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
@@ -61,6 +66,18 @@ func main() {
 		// 管理员路由
 		admin := auth.Group("/admin")
 		{
+			// 文件上传
+			admin.POST("/upload/image", handlers.UploadAvatar)
+			admin.POST("/upload/file", handlers.UploadFile)
+
+			// 管理员管理
+			admin.GET("/managers", handlers.GetAdminList)
+			admin.POST("/managers", handlers.CreateAdmin)
+			admin.PUT("/managers/:id", handlers.UpdateAdmin)
+			admin.DELETE("/managers/:id", handlers.DeleteAdmin)
+			admin.POST("/managers/:id/password", handlers.ResetAdminPassword)
+			admin.PUT("/managers/:id/status", handlers.ToggleAdminStatus)
+
 			// 用户管理
 			admin.GET("/users", handlers.GetUserList)
 			admin.POST("/users", handlers.CreateUser)
@@ -86,30 +103,30 @@ func main() {
 			admin.GET("/chat/messages/search", handlers.SearchChatMessages)
 			admin.DELETE("/chat/sessions/:id", handlers.DeleteChatSession)
 
-		// 财务管理
-		admin.GET("/withdraws/pending", handlers.GetPendingWithdraws)
-		admin.POST("/withdraw/:id/approve", handlers.ApproveWithdraw)
-		admin.POST("/withdraw/:id/transfer", handlers.ConfirmWithdrawTransfer)
-		admin.GET("/withdraws", handlers.GetWithdrawList)
-		admin.GET("/finance/stats", handlers.GetFinanceStats)
-		admin.GET("/finance/revenue", handlers.GetRevenueReport)
-		admin.GET("/finance/reports", handlers.GetFinanceReports)
-		admin.GET("/finance/accounts", handlers.GetCounselorAccountList)
-		admin.GET("/finance/accounts/:id", handlers.GetCounselorAccountDetail)
-		admin.GET("/statistics", handlers.GetAdminStatistics)
+			// 财务管理
+			admin.GET("/withdraws/pending", handlers.GetPendingWithdraws)
+			admin.POST("/withdraw/:id/approve", handlers.ApproveWithdraw)
+			admin.POST("/withdraw/:id/transfer", handlers.ConfirmWithdrawTransfer)
+			admin.GET("/withdraws", handlers.GetWithdrawList)
+			admin.GET("/finance/stats", handlers.GetFinanceStats)
+			admin.GET("/finance/revenue", handlers.GetRevenueReport)
+			admin.GET("/finance/reports", handlers.GetFinanceReports)
+			admin.GET("/finance/accounts", handlers.GetCounselorAccountList)
+			admin.GET("/finance/accounts/:id", handlers.GetCounselorAccountDetail)
+			admin.GET("/statistics", handlers.GetAdminStatistics)
 
-		// 系统管理
-		admin.GET("/user/info", handlers.GetAdminUserInfo)
-		admin.GET("/user/permissions", handlers.GetAdminPermissions)
-		admin.POST("/logout", handlers.AdminLogout)
-		admin.GET("/session/stats", handlers.GetSessionStats)
-		admin.GET("/online/users", handlers.GetOnlineUsers)
-		admin.POST("/broadcast", handlers.BroadcastSystemMessage)
-		admin.GET("/logs", handlers.GetSystemLogs)
-		admin.GET("/configs", handlers.GetSystemConfigs)
-		admin.POST("/configs", handlers.CreateSystemConfig)
-		admin.PUT("/configs/:id", handlers.UpdateSystemConfig)
-		admin.DELETE("/configs/:id", handlers.DeleteSystemConfig)
+			// 系统管理
+			admin.GET("/user/info", handlers.GetAdminUserInfo)
+			admin.GET("/user/permissions", handlers.GetAdminPermissions)
+			admin.POST("/logout", handlers.AdminLogout)
+			admin.GET("/session/stats", handlers.GetSessionStats)
+			admin.GET("/online/users", handlers.GetOnlineUsers)
+			admin.POST("/broadcast", handlers.BroadcastSystemMessage)
+			admin.GET("/logs", handlers.GetSystemLogs)
+			admin.GET("/configs", handlers.GetSystemConfigs)
+			admin.POST("/configs", handlers.CreateSystemConfig)
+			admin.PUT("/configs/:id", handlers.UpdateSystemConfig)
+			admin.DELETE("/configs/:id", handlers.DeleteSystemConfig)
 
 			// RBAC 权限管理
 			admin.GET("/roles", handlers.GetRoleList)

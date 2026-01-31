@@ -164,6 +164,7 @@ const loadMenus = () => {
       path: '/system',
       meta: { title: '系统管理', icon: 'Setting' },
       children: [
+        { path: '/admin', meta: { title: '管理员管理', icon: 'UserFilled' } },
         { path: '/user', meta: { title: '用户管理', icon: 'User' } },
         { path: '/counselor', meta: { title: '咨询师管理', icon: 'UserFilled' } },
         { path: '/roles', meta: { title: '角色管理', icon: 'Avatar' } },
@@ -176,7 +177,8 @@ const loadMenus = () => {
       meta: { title: '业务管理', icon: 'Briefcase' },
       children: [
         { path: '/order', meta: { title: '订单管理', icon: 'Document' } },
-        { path: '/chat', meta: { title: '聊天记录', icon: 'ChatDotRound' } }
+        { path: '/chat', meta: { title: '聊天记录', icon: 'ChatDotRound' } },
+        { path: '/application', meta: { title: '入驻申请', icon: 'UserFilled' } }
       ]
     },
     {
