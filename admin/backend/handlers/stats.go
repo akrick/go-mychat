@@ -198,37 +198,53 @@ func CounselorRanking(c *gin.Context) {
 	rankType := c.DefaultQuery("type", "orders")
 	limit := c.DefaultQuery("limit", "10")
 
-	var counselors []models.Counselor
+	type CounselorWithStats struct {
+		ID        uint    `json:"id"`
+		Name      string  `json:"name"`
+		Title     string  `json:"title"`
+		Avatar    string  `json:"avatar"`
+		Price     float64 `json:"price"`
+		Rating    float64 `json:"rating"`
+		OrderCount int    `json:"orderCount"`
+		Revenue   float64 `json:"revenue"`
+	}
+
+	var counselors []CounselorWithStats
 
 	switch rankType {
 	case "orders":
 		// 按订单数排名
 		database.DB.
-			Select("counselors.*, COUNT(orders.id) as order_count").
+			Table("counselors").
+			Select("counselors.*, COUNT(orders.id) as order_count, COALESCE(SUM(orders.amount), 0) as revenue").
 			Joins("LEFT JOIN orders ON counselors.id = orders.counselor_id AND orders.status >= ?", models.OrderStatusPaid).
 			Group("counselors.id").
 			Order("order_count DESC").
 			Limit(utils.ParseInt(limit)).
-			Find(&counselors)
+			Scan(&counselors)
 
 	case "income":
 		// 按收入排名
 		database.DB.
-			Select("counselors.*, COALESCE(SUM(orders.amount), 0) as total_income").
+			Table("counselors").
+			Select("counselors.*, COUNT(orders.id) as order_count, COALESCE(SUM(orders.amount), 0) as revenue").
 			Joins("LEFT JOIN orders ON counselors.id = orders.counselor_id AND orders.status >= ?", models.OrderStatusPaid).
 			Group("counselors.id").
-			Order("total_income DESC").
+			Order("revenue DESC").
 			Limit(utils.ParseInt(limit)).
-			Find(&counselors)
+			Scan(&counselors)
 
 	case "rating":
 		// 按评分排名
 		database.DB.
-			Select("counselors.*").
-			Where("status = ?", 1).
+			Table("counselors").
+			Select("counselors.*, COUNT(orders.id) as order_count, COALESCE(SUM(orders.amount), 0) as revenue").
+			Joins("LEFT JOIN orders ON counselors.id = orders.counselor_id AND orders.status >= ?", models.OrderStatusPaid).
+			Where("counselors.status = ?", 1).
+			Group("counselors.id").
 			Order("rating DESC").
 			Limit(utils.ParseInt(limit)).
-			Find(&counselors)
+			Scan(&counselors)
 
 	default:
 		c.JSON(400, gin.H{
@@ -241,9 +257,78 @@ func CounselorRanking(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"code": 200,
 		"msg":  "获取成功",
+		"data": counselors,
+	})
+}
+
+// OrderTrend godoc
+// @Summary 获取订单趋势
+// @Description 获取订单趋势数据（按时间维度统计）
+// @Tags 统计
+// @Accept json
+// @Produce json
+// @Param period query string false "时间周期:day-日,week-周,month-月" default("week")
+// @Success 200 {object} map[string]interface{} "code:200,msg:获取成功,data:{dates,values}"
+// @Router /api/stats/order/trend [get]
+func OrderTrend(c *gin.Context) {
+	period := c.DefaultQuery("period", "week")
+
+	var dates []string
+	var values []int64
+
+	now := time.Now()
+
+	switch period {
+	case "day":
+		// 最近24小时
+		for i := 23; i >= 0; i-- {
+			hour := now.Add(-time.Duration(i) * time.Hour)
+			dates = append(dates, hour.Format("15:00"))
+			var count int64
+			database.DB.Model(&models.Order{}).
+				Where("DATE(created_at) = ? AND HOUR(created_at) = ?", hour.Format("2006-01-02"), hour.Hour()).
+				Count(&count)
+			values = append(values, count)
+		}
+
+	case "week":
+		// 最近7天
+		for i := 6; i >= 0; i-- {
+			date := now.AddDate(0, 0, -i)
+			dates = append(dates, date.Format("01-02"))
+			var count int64
+			database.DB.Model(&models.Order{}).
+				Where("DATE(created_at) = ?", date.Format("2006-01-02")).
+				Count(&count)
+			values = append(values, count)
+		}
+
+	case "month":
+		// 最近30天
+		for i := 29; i >= 0; i-- {
+			date := now.AddDate(0, 0, -i)
+			dates = append(dates, date.Format("01-02"))
+			var count int64
+			database.DB.Model(&models.Order{}).
+				Where("DATE(created_at) = ?", date.Format("2006-01-02")).
+				Count(&count)
+			values = append(values, count)
+		}
+
+	default:
+		c.JSON(400, gin.H{
+			"code": 400,
+			"msg":  "不支持的时间周期",
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "获取成功",
 		"data": gin.H{
-			"type":      rankType,
-			"counselors": counselors,
+			"dates":  dates,
+			"values": values,
 		},
 	})
 }

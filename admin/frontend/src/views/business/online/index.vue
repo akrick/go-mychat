@@ -198,7 +198,7 @@ const handleQuery = async () => {
 
     // 统计各类型用户
     stats.total = tableData.value.length
-    stats.users = tableData.value.filter(u => !u.is_admin).length
+    stats.users = tableData.value.filter(u => !u.is_admin && !u.is_counselor).length
     stats.counselors = tableData.value.filter(u => u.is_counselor).length
     stats.admins = tableData.value.filter(u => u.is_admin).length
   } catch (error) {

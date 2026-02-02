@@ -25,7 +25,7 @@
         <el-table-column prop="phone" label="手机号" width="120" />
         <el-table-column label="头像" width="80">
           <template #default="{ row }">
-            <el-avatar v-if="row.avatar" :src="row.avatar" />
+            <el-avatar v-if="row.avatar" :src="getAvatarUrl(row.avatar)" />
             <el-avatar v-else>U</el-avatar>
           </template>
         </el-table-column>
@@ -33,13 +33,6 @@
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'">
               {{ row.status === 1 ? '正常' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="管理员" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.is_admin ? 'warning' : 'info'">
-              {{ row.is_admin ? '是' : '否' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -88,9 +81,6 @@
             <el-radio :label="0">禁用</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="管理员" prop="is_admin">
-          <el-switch v-model="form.is_admin" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -119,6 +109,16 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserList, createUser, updateUser, deleteUser, resetPassword } from '@/api/adminUser'
 import ImageUpload from '@/components/ImageUpload.vue'
 
+// 获取完整的头像URL
+const getAvatarUrl = (avatar) => {
+  if (!avatar) return ''
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    return avatar
+  }
+  // 如果是相对路径，添加后端服务器地址
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8081' + avatar
+}
+
 const loading = ref(false)
 const tableData = ref([])
 const total = ref(0)
@@ -142,8 +142,7 @@ const form = reactive({
   email: '',
   phone: '',
   avatar: '',
-  status: 1,
-  is_admin: false
+  status: 1
 })
 
 const passwordForm = reactive({
@@ -190,8 +189,7 @@ const handleAdd = () => {
     email: '',
     phone: '',
     avatar: '',
-    status: 1,
-    is_admin: false
+    status: 1
   })
   dialogVisible.value = true
 }
@@ -205,8 +203,7 @@ const handleEdit = (row) => {
     email: row.email,
     phone: row.phone,
     avatar: row.avatar,
-    status: row.status,
-    is_admin: row.is_admin
+    status: row.status
   })
   dialogVisible.value = true
 }

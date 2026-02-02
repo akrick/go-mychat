@@ -21,7 +21,9 @@ func InitDB() error {
 	// 自动迁移表结构
 	err = DB.AutoMigrate(
 		&models.User{},
+		&models.Administrator{},
 		&models.Counselor{},
+		&models.CounselorApplication{},
 		&models.Order{},
 		&models.Payment{},
 		&models.PaymentConfig{},
@@ -42,6 +44,8 @@ func InitDB() error {
 		&models.LowcodeFormData{},
 		&models.RolePermission{},
 		&models.UserRole{},
+		&models.SystemLog{},
+		&models.SystemConfig{},
 	)
 	if err != nil {
 		return fmt.Errorf("failed to migrate database: %w", err)
@@ -56,15 +60,16 @@ func InitDB() error {
 // createDefaultAdmin 创建默认管理员账号
 func createDefaultAdmin() {
 	var count int64
-	DB.Model(&models.User{}).Where("username = ?", "admin").Count(&count)
+	DB.Model(&models.Administrator{}).Where("username = ?", "admin").Count(&count)
 	if count == 0 {
 		hashedPassword, _ := utils.HashPassword("admin123")
-		admin := models.User{
-			Username: "admin",
-			Password: hashedPassword,
-			Email:    "admin@mychat.com",
-			Status:   1,
-			IsAdmin:  true,
+		admin := models.Administrator{
+			Username:  "admin",
+			Password:  hashedPassword,
+			RealName:  "超级管理员",
+			Email:     "admin@mychat.com",
+			Role:      "super_admin",
+			Status:    1,
 		}
 		DB.Create(&admin)
 		fmt.Println("默认管理员账号创建成功: admin / admin123")

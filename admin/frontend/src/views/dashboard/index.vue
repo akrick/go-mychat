@@ -207,6 +207,7 @@ import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
+import { getAdminStatistics, getSessionStats, getCounselorRanking, getOrderTrend, getRevenueReport } from '@/api/statistics'
 import { User, Avatar, Document, Money, ChatDotRound, TrendCharts, Bottom, Refresh } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -231,7 +232,7 @@ const formatNumber = (num) => {
 
 const loadStatistics = async () => {
   try {
-    const res = await request.get('/admin/statistics')
+    const res = await getAdminStatistics()
     console.log('统计数据响应:', res)
     // 兼容不同的响应格式
     const data = res.data || res || {}
@@ -248,7 +249,12 @@ const loadStatistics = async () => {
       todayOrderCount: data.today_order_count || 0,
       todayAmount: data.today_amount || 0,
       sessionCount: data.session_count || 0,
-      activeSessionCount: data.active_session_count || 0
+      activeSessionCount: data.active_session_count || 0,
+      // 订单状态统计
+      pendingOrders: data.pending_orders || 0,
+      paidOrders: data.paid_orders || 0,
+      completedOrders: data.completed_orders || 0,
+      cancelledOrders: data.cancelled_orders || 0
     }
   } catch (error) {
     console.error('获取统计数据失败:', error)
@@ -257,8 +263,8 @@ const loadStatistics = async () => {
 
 const loadCounselorRanking = async () => {
   try {
-    const res = await request.get('/admin/stats/counselor/ranking')
-    counselorRanking.value = res || []
+    const res = await getCounselorRanking()
+    counselorRanking.value = res.data || res || []
   } catch (error) {
     console.error('获取咨询师排名失败:', error)
   }
@@ -266,8 +272,8 @@ const loadCounselorRanking = async () => {
 
 const loadOrderChart = async () => {
   try {
-    const res = await request.get('/admin/stats/order/trend', { period: orderChartPeriod.value })
-    updateOrderChart(res)
+    const res = await getOrderTrend({ period: orderChartPeriod.value })
+    updateOrderChart(res.data || res)
   } catch (error) {
     console.error('获取订单趋势失败:', error)
   }
@@ -275,8 +281,14 @@ const loadOrderChart = async () => {
 
 const loadRevenueChart = async () => {
   try {
-    const res = await request.get('/admin/finance/revenue', { group_by: revenueChartPeriod.value })
-    updateRevenueChart(res)
+    const res = await getRevenueReport({ group_by: revenueChartPeriod.value })
+    const data = res.data || res
+    // 转换后端返回的数据格式为前端期望的格式
+    const revenueData = data?.revenue_data || []
+    updateRevenueChart({
+      dates: revenueData.map(item => item.date),
+      values: revenueData.map(item => item.amount)
+    })
   } catch (error) {
     console.error('获取营收趋势失败:', error)
   }
@@ -407,8 +419,8 @@ const updateStatusChart = () => {
         labelLine: { show: false },
         data: [
           { value: statistics.value.completedOrders || 1048, name: '已完成', itemStyle: { color: '#67c23a' } },
-          { value: statistics.value.pendingOrders || 735, name: '进行中', itemStyle: { color: '#e6a23c' } },
-          { value: statistics.value.unpaidOrders || 580, name: '待支付', itemStyle: { color: '#f56c6c' } },
+          { value: statistics.value.paidOrders || 735, name: '进行中', itemStyle: { color: '#e6a23c' } },
+          { value: statistics.value.pendingOrders || 580, name: '待支付', itemStyle: { color: '#f56c6c' } },
           { value: statistics.value.cancelledOrders || 300, name: '已取消', itemStyle: { color: '#909399' } }
         ],
         emphasis: {
@@ -452,18 +464,16 @@ const handleResize = () => {
 }
 
 onMounted(async () => {
+  // 初始化图表实例
+  orderChart = echarts.init(orderChartRef.value)
+  revenueChart = echarts.init(revenueChartRef.value)
+  statusChart = echarts.init(statusChartRef.value)
+
+  // 加载数据
   await loadStatistics()
   await loadCounselorRanking()
   await loadOrderChart()
   await loadRevenueChart()
-
-  orderChart = echarts.init(orderChartRef.value)
-  await loadOrderChart()
-
-  revenueChart = echarts.init(revenueChartRef.value)
-  await loadRevenueChart()
-
-  statusChart = echarts.init(statusChartRef.value)
   updateStatusChart()
 
   window.addEventListener('resize', handleResize)

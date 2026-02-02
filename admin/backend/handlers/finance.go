@@ -110,13 +110,37 @@ func GetFinanceStats(c *gin.Context) {
 // @Security BearerAuth
 // @Param start_date query string false "开始日期"
 // @Param end_date query string false "结束日期"
-// @Param group_by query string false "分组方式:day,month,year" Enums(day,month,year)
+// @Param group_by query string false "分组方式:day,week,month,year" Enums(day,week,month,year)
 // @Success 200 {object} map[string]interface{} "code:200,msg:获取成功"
 // @Router /api/admin/finance/revenue [get]
 func GetRevenueReport(c *gin.Context) {
 	startDate := c.DefaultQuery("start_date", "")
 	endDate := c.DefaultQuery("end_date", "")
 	groupBy := c.DefaultQuery("group_by", "day")
+
+	now := time.Now()
+
+	// 如果未指定日期范围，根据group_by自动设置默认范围
+	if startDate == "" {
+		switch groupBy {
+		case "week":
+			// 本周一
+			startDate = now.AddDate(0, 0, -int(now.Weekday())+1).Format("2006-01-02")
+		case "month":
+			// 本月第一天
+			startDate = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+		case "year":
+			// 本年第一天
+			startDate = time.Date(now.Year(), 1, 1, 0, 0, 0, 0, now.Location()).Format("2006-01-02")
+		default:
+			// 默认最近30天
+			startDate = now.AddDate(0, 0, -29).Format("2006-01-02")
+		}
+	}
+
+	if endDate == "" {
+		endDate = now.Format("2006-01-02")
+	}
 
 	var dateFormat string
 	switch groupBy {
@@ -125,6 +149,7 @@ func GetRevenueReport(c *gin.Context) {
 	case "year":
 		dateFormat = "%Y"
 	default:
+		// week 和 day 都使用日分组
 		dateFormat = "%Y-%m-%d"
 	}
 

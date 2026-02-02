@@ -4,6 +4,27 @@ import (
 	"time"
 )
 
+// Administrator 后台管理员表
+type Administrator struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Username  string    `gorm:"type:varchar(50);uniqueIndex;not null;comment:用户名" json:"username"`
+	Password  string    `gorm:"type:varchar(255);not null;comment:密码" json:"-"`
+	RealName  string    `gorm:"type:varchar(50);comment:真实姓名" json:"real_name"`
+	Email     string    `gorm:"type:varchar(100);uniqueIndex;comment:邮箱" json:"email"`
+	Phone     string    `gorm:"type:varchar(20);comment:手机号" json:"phone"`
+	Avatar    string    `gorm:"type:varchar(255);comment:头像" json:"avatar"`
+	Role      string    `gorm:"type:varchar(50);default:'admin';comment:角色" json:"role"`
+	Status    int       `gorm:"default:1;comment:状态:0-禁用,1-正常" json:"status"`
+	LastLogin time.Time `gorm:"comment:最后登录时间" json:"last_login"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// TableName 指定表名
+func (Administrator) TableName() string {
+	return "administrator"
+}
+
 // SystemLog 系统日志表
 type SystemLog struct {
 	ID          uint      `gorm:"primaryKey" json:"id"`

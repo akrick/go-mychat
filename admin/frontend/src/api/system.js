@@ -27,12 +27,30 @@ export const getSystemConfigs = (params) => {
   })
 }
 
+// 创建系统配置
+export const createSystemConfig = (data) => {
+  return request({
+    url: '/api/admin/configs',
+    method: 'post',
+    data
+  })
+}
+
 // 更新系统配置
 export const updateSystemConfig = (id, data) => {
   return request({
     url: `/api/admin/configs/${id}`,
     method: 'put',
     data
+  })
+}
+
+// 批量保存配置
+export const batchSaveConfigs = (configs) => {
+  return request({
+    url: '/api/admin/configs/batch',
+    method: 'post',
+    data: { configs }
   })
 }
 
@@ -58,5 +76,22 @@ export const getSessionStats = () => {
   return request({
     url: '/api/admin/session/stats',
     method: 'get'
+  })
+}
+
+// 强制下线用户
+export const kickOutUser = (id) => {
+  return request({
+    url: `/api/admin/online/users/${id}/kick`,
+    method: 'post'
+  })
+}
+
+// 发送消息给指定用户
+export const sendToUser = (id, data) => {
+  return request({
+    url: `/api/admin/online/users/${id}/message`,
+    method: 'post',
+    data
   })
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"akrick.com/mychat/admin/backend/database"
 	"akrick.com/mychat/admin/backend/handlers"
-	"akrick.com/mychat/admin/backend/middleware"
+	middlewarepkg "akrick.com/mychat/admin/backend/middleware"
 	"akrick.com/mychat/admin/backend/websocket"
 	"fmt"
 	"log"
@@ -45,12 +45,13 @@ func main() {
 	})
 
 	// JWT 认证中间件
-	authMiddleware := middleware.AuthMiddleware()
+	authMiddleware := middlewarepkg.AuthMiddleware()
 
 	// 公开路由
 	public := r.Group("/api")
 	{
 		public.POST("/admin/login", handlers.AdminLogin)
+		public.POST("/admin2/login", handlers.AdminLogin2)
 		fmt.Println("✅ 注册公开路由: POST /api/admin/login")
 		public.GET("/test", func(c *gin.Context) {
 			c.JSON(200, gin.H{"msg": "后端正常运行"})
@@ -63,22 +64,35 @@ func main() {
 	auth := r.Group("/api")
 	auth.Use(authMiddleware)
 	{
-		// 管理员路由
+		// 管理员路由(使用Administrator表)
+		admin2 := auth.Group("/admin2")
+		admin2.Use(middlewarepkg.AdminAuthMiddleware())
+		{
+			// 管理员管理
+			admin2.GET("/administrators", handlers.GetAdministratorList)
+			admin2.POST("/administrators", handlers.CreateAdministrator)
+			admin2.PUT("/administrators/:id", handlers.UpdateAdministrator)
+			admin2.DELETE("/administrators/:id", handlers.DeleteAdministrator)
+			admin2.POST("/administrators/:id/password", handlers.ResetAdministratorPassword)
+			admin2.PUT("/administrators/:id/status", handlers.ToggleAdministratorStatus)
+
+			// 个人信息
+			admin2.GET("/info", handlers.GetAdminInfo2)
+			admin2.PUT("/profile", handlers.UpdateMyProfile)
+			admin2.POST("/password", handlers.ChangeMyPassword)
+			admin2.POST("/logout", handlers.AdminLogout2)
+
+			// 权限
+			admin2.GET("/permissions", handlers.GetAdminPermissions2)
+		}
+		// 管理员路由(兼容旧接口，使用Administrator表)
 		admin := auth.Group("/admin")
 		{
 			// 文件上传
 			admin.POST("/upload/image", handlers.UploadAvatar)
 			admin.POST("/upload/file", handlers.UploadFile)
 
-			// 管理员管理
-			admin.GET("/managers", handlers.GetAdminList)
-			admin.POST("/managers", handlers.CreateAdmin)
-			admin.PUT("/managers/:id", handlers.UpdateAdmin)
-			admin.DELETE("/managers/:id", handlers.DeleteAdmin)
-			admin.POST("/managers/:id/password", handlers.ResetAdminPassword)
-			admin.PUT("/managers/:id/status", handlers.ToggleAdminStatus)
-
-			// 用户管理
+			// 用户管理(普通用户表)
 			admin.GET("/users", handlers.GetUserList)
 			admin.POST("/users", handlers.CreateUser)
 			admin.PUT("/users/:id", handlers.UpdateUser)
@@ -91,10 +105,19 @@ func main() {
 			admin.PUT("/counselors/:id", handlers.UpdateCounselor)
 			admin.DELETE("/counselors/:id", handlers.DeleteCounselor)
 
+			// 入驻申请管理
+			admin.GET("/counselor/applications", handlers.GetApplicationList)
+			admin.GET("/counselor/applications/:id", handlers.GetApplicationDetail)
+			admin.PUT("/counselor/applications/:id/review", handlers.ReviewApplication)
+
 			// 订单管理
 			admin.GET("/orders", handlers.GetOrderList)
 			admin.GET("/orders/statistics", handlers.GetOrderStatistics)
 			admin.PUT("/orders/:id/status", handlers.AdminUpdateOrderStatus)
+
+			// 统计数据
+			admin.GET("/stats/counselor/ranking", handlers.CounselorRanking)
+			admin.GET("/stats/order/trend", handlers.OrderTrend)
 
 			// 聊天管理
 			admin.GET("/chat/sessions", handlers.GetAdminChatSessions)
@@ -121,11 +144,14 @@ func main() {
 			admin.POST("/logout", handlers.AdminLogout)
 			admin.GET("/session/stats", handlers.GetSessionStats)
 			admin.GET("/online/users", handlers.GetOnlineUsers)
+			admin.POST("/online/users/:id/kick", handlers.KickOutUser)
+			admin.POST("/online/users/:id/message", handlers.SendToUser)
 			admin.POST("/broadcast", handlers.BroadcastSystemMessage)
 			admin.GET("/logs", handlers.GetSystemLogs)
 			admin.GET("/configs", handlers.GetSystemConfigs)
 			admin.POST("/configs", handlers.CreateSystemConfig)
 			admin.PUT("/configs/:id", handlers.UpdateSystemConfig)
+			admin.POST("/configs/batch", handlers.BatchSaveConfigs)
 			admin.DELETE("/configs/:id", handlers.DeleteSystemConfig)
 
 			// RBAC 权限管理

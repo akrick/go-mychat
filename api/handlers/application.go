@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -369,9 +370,6 @@ func ReviewApplication(c *gin.Context) {
 
 	// 如果审核通过，创建咨询师账户
 	if req.Status == 1 {
-		// 生成咨询师编号
-		counselorNo := fmt.Sprintf("C%06d", application.ID)
-
 		// 创建咨询师记录
 		counselor := models.Counselor{
 			UserID:    application.UserID,
@@ -490,7 +488,7 @@ func UploadCertificate(c *gin.Context) {
 	if file.Header.Get("Content-Type") == "image/png" {
 		ext = ".png"
 	}
-	filename := fmt.Sprintf("certificate_%d_%d%s", uint(c.GetFloat64("user_id")), c.GetTime("timestamp"), ext)
+	filename := fmt.Sprintf("certificate_%d_%d%s", uint(c.GetFloat64("user_id")), time.Now().Unix(), ext)
 
 	// 保存文件路径
 	uploadPath := "./uploads/certificates/"

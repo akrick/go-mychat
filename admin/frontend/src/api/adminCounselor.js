@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 获取咨询师列表
 export function getCounselorList(params) {
   return request({
-    url: '/api/counselor/list',
+    url: '/api/admin/counselors',
     method: 'get',
     params
   })
@@ -38,7 +38,7 @@ export function deleteCounselor(id) {
 // 获取咨询师详情
 export function getCounselorDetail(id) {
   return request({
-    url: `/api/counselor/${id}`,
+    url: `/api/admin/counselors/${id}`,
     method: 'get'
   })
 }

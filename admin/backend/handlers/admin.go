@@ -109,6 +109,105 @@ func wsBroadcastSystemMessage(content string) {
 	websocket.BroadcastToAll(msg)
 }
 
+// KickOutUser godoc
+// @Summary 强制下线用户
+// @Description 强制指定用户下线
+// @Tags 管理员
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "用户ID"
+// @Success 200 {object} map[string]interface{} "code:200,msg:下线成功"
+// @Router /api/admin/online/users/:id/kick [post]
+func KickOutUser(c *gin.Context) {
+	userID := c.Param("id")
+
+	// 将字符串转换为uint
+	var uid uint
+	fmt.Sscanf(userID, "%d", &uid)
+
+	// 检查用户是否在线
+	if !websocket.IsUserOnline(uid) {
+		c.JSON(400, gin.H{
+			"code": 400,
+			"msg":  "用户不在线",
+		})
+		return
+	}
+
+	// 发送强制下线消息给用户
+	msg, _ := json.Marshal(map[string]interface{}{
+		"type": "force_logout",
+		"data": gin.H{
+			"reason":     "管理员强制下线",
+			"created_at": time.Now(),
+		},
+	})
+
+	websocket.SendToUser(uid, msg)
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "用户已强制下线",
+	})
+}
+
+// SendToUser godoc
+// @Summary 发送消息给指定用户
+// @Description 向指定在线用户发送消息
+// @Tags 管理员
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "用户ID"
+// @Param request body map[string]interface{} true "消息内容"
+// @Success 200 {object} map[string]interface{} "code:200,msg:发送成功"
+// @Router /api/admin/online/users/:id/message [post]
+func SendToUser(c *gin.Context) {
+	userID := c.Param("id")
+
+	// 将字符串转换为uint
+	var uid uint
+	fmt.Sscanf(userID, "%d", &uid)
+
+	var req struct {
+		Content string `json:"content" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{
+			"code": 400,
+			"msg":  "参数错误: " + err.Error(),
+		})
+		return
+	}
+
+	// 检查用户是否在线
+	if !websocket.IsUserOnline(uid) {
+		c.JSON(400, gin.H{
+			"code": 400,
+			"msg":  "用户不在线",
+		})
+		return
+	}
+
+	// 发送消息给指定用户
+	msg, _ := json.Marshal(map[string]interface{}{
+		"type": "admin_message",
+		"data": gin.H{
+			"content":    req.Content,
+			"created_at": time.Now(),
+		},
+	})
+
+	websocket.SendToUser(uid, msg)
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "消息发送成功",
+	})
+}
+
 // ApproveWithdraw godoc
 // @Summary 审核提现申请
 // @Description 管理员审核提现申请
@@ -326,19 +425,74 @@ func GetAdminStatistics(c *gin.Context) {
 	var sessionCount int64
 	var activeSessionCount int64
 
+	// 趋势数据
+	var yesterdayOrderCount int64
+	var yesterdayAmount float64
+
+	// 订单状态统计
+	var pendingOrders int64
+	var paidOrders int64
+	var completedOrders int64
+	var cancelledOrders int64
+
 	database.DB.Model(&models.User{}).Count(&userCount)
 	database.DB.Model(&models.User{}).Where("status = ?", 1).Count(&onlineUserCount)
 	database.DB.Model(&models.Counselor{}).Where("status = ?", 1).Count(&counselorCount)
 	database.DB.Model(&models.Order{}).Count(&orderCount)
-	
+
 	today := time.Now().Format("2006-01-02")
+	yesterday := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
+
 	database.DB.Model(&models.Order{}).Where("DATE(created_at) = ?", today).Count(&todayOrderCount)
-	
+	database.DB.Model(&models.Order{}).Where("DATE(created_at) = ?", yesterday).Count(&yesterdayOrderCount)
+
 	database.DB.Model(&models.Order{}).Where("status = ?", models.OrderStatusPaid).Select("COALESCE(SUM(amount), 0)").Scan(&totalAmount)
 	database.DB.Model(&models.Order{}).Where("status = ? AND DATE(created_at) = ?", models.OrderStatusPaid, today).Select("COALESCE(SUM(amount), 0)").Scan(&todayAmount)
-	
+	database.DB.Model(&models.Order{}).Where("status = ? AND DATE(created_at) = ?", models.OrderStatusPaid, yesterday).Select("COALESCE(SUM(amount), 0)").Scan(&yesterdayAmount)
+
+	// 订单状态统计
+	database.DB.Model(&models.Order{}).Where("status = ?", models.OrderStatusPending).Count(&pendingOrders)
+	database.DB.Model(&models.Order{}).Where("status = ?", models.OrderStatusPaid).Count(&paidOrders)
+	database.DB.Model(&models.Order{}).Where("status = ?", models.OrderStatusCompleted).Count(&completedOrders)
+	database.DB.Model(&models.Order{}).Where("status = ?", models.OrderStatusCancelled).Count(&cancelledOrders)
+
 	database.DB.Model(&models.ChatSession{}).Count(&sessionCount)
 	database.DB.Model(&models.ChatSession{}).Where("status = ?", 1).Count(&activeSessionCount)
+
+	// 计算趋势百分比
+	var userTrend float64
+	var counselorTrend float64
+	var orderTrend float64
+	var revenueTrend float64
+
+	if yesterdayOrderCount > 0 {
+		orderTrend = float64(todayOrderCount-yesterdayOrderCount) / float64(yesterdayOrderCount) * 100
+	}
+
+	if yesterdayAmount > 0 {
+		revenueTrend = (todayAmount - yesterdayAmount) / yesterdayAmount * 100
+	}
+
+	// 用户和咨询师趋势使用月度对比
+	var lastMonthUserCount int64
+	var thisMonthUserCount int64
+	lastMonth := time.Now().AddDate(0, -1, 0).Format("2006-01")
+	thisMonth := time.Now().Format("2006-01")
+	database.DB.Model(&models.User{}).Where("DATE_FORMAT(created_at, '%Y-%m') = ?", lastMonth).Count(&lastMonthUserCount)
+	database.DB.Model(&models.User{}).Where("DATE_FORMAT(created_at, '%Y-%m') = ?", thisMonth).Count(&thisMonthUserCount)
+
+	if lastMonthUserCount > 0 {
+		userTrend = float64(thisMonthUserCount-lastMonthUserCount) / float64(lastMonthUserCount) * 100
+	}
+
+	var lastMonthCounselorCount int64
+	var thisMonthCounselorCount int64
+	database.DB.Model(&models.Counselor{}).Where("DATE_FORMAT(created_at, '%Y-%m') = ?", lastMonth).Count(&lastMonthCounselorCount)
+	database.DB.Model(&models.Counselor{}).Where("DATE_FORMAT(created_at, '%Y-%m') = ?", thisMonth).Count(&thisMonthCounselorCount)
+
+	if lastMonthCounselorCount > 0 {
+		counselorTrend = float64(thisMonthCounselorCount-lastMonthCounselorCount) / float64(lastMonthCounselorCount) * 100
+	}
 
 	c.JSON(200, gin.H{
 		"code": 200,
@@ -353,12 +507,20 @@ func GetAdminStatistics(c *gin.Context) {
 			"today_amount":         todayAmount,
 			"session_count":        sessionCount,
 			"active_session_count": activeSessionCount,
+			"user_trend":           userTrend,
+			"counselor_trend":      counselorTrend,
+			"order_trend":          orderTrend,
+			"revenue_trend":        revenueTrend,
+			"pending_orders":       pendingOrders,
+			"paid_orders":          paidOrders,
+			"completed_orders":     completedOrders,
+			"cancelled_orders":      cancelledOrders,
 		},
 	})
 }
 
 // AdminLogin godoc
-// @Summary 管理员登录
+// @Summary 管理员登录（兼容旧接口，使用Administrator表）
 // @Description 管理员登录接口（公开路由，无需鉴权）
 // @Tags 管理员
 // @Accept json
@@ -390,9 +552,9 @@ func AdminLogin(c *gin.Context) {
 
 	fmt.Printf("用户名: %s, 密码: %s\n", req.Username, req.Password)
 
-	var user models.User
-	if err := database.DB.Where("username = ?", req.Username).First(&user).Error; err != nil {
-		fmt.Println("用户查询失败:", err)
+	var admin models.Administrator
+	if err := database.DB.Where("username = ?", req.Username).First(&admin).Error; err != nil {
+		fmt.Println("管理员查询失败:", err)
 		c.JSON(401, gin.H{
 			"code": 401,
 			"msg":  "用户名或密码错误",
@@ -400,49 +562,23 @@ func AdminLogin(c *gin.Context) {
 		return
 	}
 
-	fmt.Printf("找到用户: ID=%d, Username=%s, IsAdmin=%v, Status=%d\n", user.ID, user.Username, user.IsAdmin, user.Status)
+	fmt.Printf("找到管理员: ID=%d, Username=%s, Role=%s, Status=%d\n", admin.ID, admin.Username, admin.Role, admin.Status)
 
-	// 检查是否为管理员
-	if !user.IsAdmin {
-		fmt.Println("用户不是管理员")
-		c.JSON(403, gin.H{
-			"code": 403,
-			"msg":  "非管理员账号",
+	// 验证密码
+	passwordValid := utils.CheckPassword(req.Password, admin.Password)
+	fmt.Printf("密码验证结果: %v\n", passwordValid)
+
+	if !passwordValid {
+		c.JSON(401, gin.H{
+			"code": 401,
+			"msg":  "用户名或密码错误",
 		})
 		return
 	}
 
-	// 临时逻辑：如果是 admin123，生成正确的哈希并更新
-	if req.Password == "admin123" {
-		fmt.Println("检测到 admin123，生成新的密码哈希")
-		newHash, err := utils.HashPassword(req.Password)
-		if err != nil {
-			fmt.Println("生成哈希失败:", err)
-		} else {
-			fmt.Println("生成的哈希:", newHash)
-			if err := database.DB.Model(&user).Update("password", newHash).Error; err != nil {
-				fmt.Println("更新密码失败:", err)
-			} else {
-				fmt.Println("密码哈希已更新到数据库")
-			}
-		}
-	} else {
-		// 验证密码
-		passwordValid := utils.CheckPassword(req.Password, user.Password)
-		fmt.Printf("密码验证结果: %v\n", passwordValid)
-
-		if !passwordValid {
-			c.JSON(401, gin.H{
-				"code": 401,
-				"msg":  "用户名或密码错误",
-			})
-			return
-		}
-	}
-
 	// 检查状态
-	if user.Status != 1 {
-		fmt.Println("用户状态异常:", user.Status)
+	if admin.Status != 1 {
+		fmt.Println("管理员状态异常:", admin.Status)
 		c.JSON(403, gin.H{
 			"code": 403,
 			"msg":  "账号已被禁用",
@@ -451,7 +587,7 @@ func AdminLogin(c *gin.Context) {
 	}
 
 	// 生成Token
-	token, err := utils.GenerateToken(user.ID, user.Username)
+	token, err := utils.GenerateToken(admin.ID, admin.Username)
 	if err != nil {
 		fmt.Println("生成Token失败:", err)
 		c.JSON(500, gin.H{
@@ -460,6 +596,10 @@ func AdminLogin(c *gin.Context) {
 		})
 		return
 	}
+
+	// 更新最后登录时间
+	now := time.Now()
+	database.DB.Model(&admin).Update("last_login", now)
 
 	fmt.Println("登录成功，生成的Token:", token)
 	fmt.Println("=== 登录请求结束 ===")
@@ -470,11 +610,12 @@ func AdminLogin(c *gin.Context) {
 		"data": gin.H{
 			"token": token,
 			"user": gin.H{
-				"id":       user.ID,
-				"username": user.Username,
-				"email":    user.Email,
-				"avatar":   user.Avatar,
-				"is_admin": user.IsAdmin,
+				"id":        admin.ID,
+				"username":  admin.Username,
+				"real_name": admin.RealName,
+				"email":     admin.Email,
+				"avatar":    admin.Avatar,
+				"role":     admin.Role,
 			},
 		},
 	})

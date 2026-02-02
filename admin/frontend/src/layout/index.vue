@@ -169,7 +169,8 @@ const loadMenus = () => {
         { path: '/counselor', meta: { title: '咨询师管理', icon: 'UserFilled' } },
         { path: '/roles', meta: { title: '角色管理', icon: 'Avatar' } },
         { path: '/permissions', meta: { title: '权限管理', icon: 'Key' } },
-        { path: '/menus', meta: { title: '菜单管理', icon: 'Menu' } }
+        { path: '/menus', meta: { title: '菜单管理', icon: 'Menu' } },
+        { path: '/config', meta: { title: '系统配置', icon: 'Tools' } }
       ]
     },
     {
@@ -178,7 +179,8 @@ const loadMenus = () => {
       children: [
         { path: '/order', meta: { title: '订单管理', icon: 'Document' } },
         { path: '/chat', meta: { title: '聊天记录', icon: 'ChatDotRound' } },
-        { path: '/application', meta: { title: '入驻申请', icon: 'UserFilled' } }
+        { path: '/application', meta: { title: '入驻申请', icon: 'UserFilled' } },
+        { path: '/online', meta: { title: '在线用户', icon: 'User' } }
       ]
     },
     {

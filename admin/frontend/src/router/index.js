@@ -119,14 +119,14 @@ const routes = [
       {
         path: 'online',
         name: 'Online',
-        component: () => import('@/views/system/online/index.vue'),
+        component: () => import('@/views/business/online/index.vue'),
         meta: { title: '在线用户', icon: 'User', permission: 'system:online:list' }
       },
       {
         path: 'config',
         name: 'Config',
         component: () => import('@/views/system/config/index.vue'),
-        meta: { title: '系统配置', icon: 'Setting', permission: 'system:config:manage' }
+        meta: { title: '系统配置', icon: 'Setting' }
       }
     ]
   },

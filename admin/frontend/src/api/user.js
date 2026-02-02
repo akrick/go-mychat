@@ -1,9 +1,9 @@
 import request from '@/utils/request'
 
-// 管理员登录
+// 管理员登录(使用新的Administrator表)
 export function login(data) {
   return request({
-    url: '/api/admin/login',
+    url: '/api/admin2/login',
     method: 'post',
     data
   })
@@ -12,7 +12,7 @@ export function login(data) {
 // 管理员登录 (别名)
 export function adminLogin(data) {
   return request({
-    url: '/api/admin/login',
+    url: '/api/admin2/login',
     method: 'post',
     data
   })
@@ -21,7 +21,7 @@ export function adminLogin(data) {
 // 管理员退出
 export function logout() {
   return request({
-    url: '/api/admin/logout',
+    url: '/api/admin2/logout',
     method: 'post'
   })
 }
@@ -29,7 +29,7 @@ export function logout() {
 // 管理员退出 (别名)
 export function adminLogout() {
   return request({
-    url: '/api/admin/logout',
+    url: '/api/admin2/logout',
     method: 'post'
   })
 }
@@ -37,7 +37,7 @@ export function adminLogout() {
 // 获取用户信息
 export function getUserInfo() {
   return request({
-    url: '/api/admin/user/info',
+    url: '/api/admin2/info',
     method: 'get'
   })
 }
@@ -45,7 +45,7 @@ export function getUserInfo() {
 // 获取用户信息 (别名)
 export function getAdminInfo() {
   return request({
-    url: '/api/admin/user/info',
+    url: '/api/admin2/info',
     method: 'get'
   })
 }
@@ -53,7 +53,7 @@ export function getAdminInfo() {
 // 获取权限
 export function getPermissions() {
   return request({
-    url: '/api/admin/user/permissions',
+    url: '/api/admin2/permissions',
     method: 'get'
   })
 }
@@ -61,7 +61,7 @@ export function getPermissions() {
 // 获取权限 (别名)
 export function getAdminPermissions() {
   return request({
-    url: '/api/admin/user/permissions',
+    url: '/api/admin2/permissions',
     method: 'get'
   })
 }
@@ -69,7 +69,7 @@ export function getAdminPermissions() {
 // 修改密码
 export function changePassword(data) {
   return request({
-    url: '/api/admin/user/password',
+    url: '/api/admin2/password',
     method: 'post',
     data
   })
@@ -78,7 +78,7 @@ export function changePassword(data) {
 // 上传头像
 export function uploadAvatar(formData) {
   return request({
-    url: '/api/admin/upload',
+    url: '/api/admin/upload/image',
     method: 'post',
     data: formData,
     headers: {

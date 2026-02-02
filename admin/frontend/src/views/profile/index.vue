@@ -99,14 +99,15 @@ import { useUserStore } from '@/stores/user'
 import { Camera } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import { changePassword } from '@/api/user'
 import dayjs from 'dayjs'
 
 const userStore = useUserStore()
 
 const passwordFormRef = ref(null)
 const passwordLoading = ref(false)
-const uploadUrl = import.meta.env.VITE_API_BASE_URL + '/admin/upload'
-const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iNjUiIGhlaWdodD0iNjUiIHJ4PSI1MDAiIHJ5PSI3MCIgZmlsbD0iI2QxMjZmZiIi8+PC9zdmc+'
+const uploadUrl = import.meta.env.VITE_API_BASE_URL + '/api/admin/upload'
+const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iNjUiIGhlaWdodD0iNjUiIHJ4PSI1MDAiIHJ5PSI3MCIgZmlsbD0iI2QxMjZmZiIvPjwvc3ZnPg=='
 
 const passwordForm = reactive({
   oldPassword: '',
@@ -169,7 +170,7 @@ const handleChangePassword = async () => {
 
   try {
     passwordLoading.value = true
-    await request.post('/admin/user/password', {
+    await changePassword({
       old_password: passwordForm.oldPassword,
       new_password: passwordForm.newPassword
     })

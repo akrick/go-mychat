@@ -7,19 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// UpdateProfileRequest 更新用户资料请求
-type UpdateProfileRequest struct {
-	Email  string `json:"email" binding:"omitempty,email"`
-	Phone  string `json:"phone" binding:"omitempty,len=11"`
-	Avatar string `json:"avatar"`
-}
-
-// ChangePasswordRequest 修改密码请求
-type ChangePasswordRequest struct {
-	OldPassword string `json:"old_password" binding:"required"`
-	NewPassword string `json:"new_password" binding:"required,min=6"`
-}
-
 // UpdateProfile godoc
 // @Summary 更新用户资料
 // @Description 更新当前用户的资料信息
@@ -27,7 +14,7 @@ type ChangePasswordRequest struct {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body UpdateProfileRequest true "更新信息"
+// @Param request body UserUpdateProfileRequest true "更新信息"
 // @Success 200 {object} map[string]interface{} "code:200,msg:更新成功"
 // @Failure 400 {object} map[string]interface{} "参数错误"
 // @Failure 401 {object} map[string]interface{} "未授权"
@@ -36,7 +23,7 @@ type ChangePasswordRequest struct {
 func UpdateProfile(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
-	var req UpdateProfileRequest
+	var req UserUpdateProfileRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{
 			"code": 400,
@@ -85,7 +72,7 @@ func UpdateProfile(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body ChangePasswordRequest true "密码信息"
+// @Param request body UserChangePasswordRequest true "密码信息"
 // @Success 200 {object} map[string]interface{} "code:200,msg:修改成功"
 // @Failure 400 {object} map[string]interface{} "参数错误或旧密码错误"
 // @Failure 401 {object} map[string]interface{} "未授权"
@@ -94,7 +81,7 @@ func UpdateProfile(c *gin.Context) {
 func ChangePassword(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 
-	var req ChangePasswordRequest
+	var req UserChangePasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{
 			"code": 400,
@@ -180,7 +167,7 @@ func GetStatistics(c *gin.Context) {
 
 // GetUserList godoc
 // @Summary 获取用户列表
-// @Description 获取用户列表（管理员接口）
+// @Description 获取普通用户列表（管理员接口）
 // @Tags 用户管理
 // @Accept json
 // @Produce json
@@ -228,6 +215,11 @@ func GetUserList(c *gin.Context) {
 		return
 	}
 
+	// 隐藏密码
+	for i := range users {
+		users[i].Password = ""
+	}
+
 	c.JSON(200, gin.H{
 		"code": 200,
 		"msg":  "获取成功",
@@ -240,16 +232,16 @@ func GetUserList(c *gin.Context) {
 
 // CreateUser godoc
 // @Summary 创建用户
-// @Description 创建用户（管理员接口）
+// @Description 创建普通用户（管理员接口）
 // @Tags 用户管理
 // @Accept json
 // @Produce json
 // @Security BearerAuth
-// @Param request body CreateUserRequest true "用户信息"
+// @Param request body UserCreateRequest true "用户信息"
 // @Success 200 {object} map[string]interface{} "code:200,msg:创建成功"
 // @Router /api/admin/users [post]
 func CreateUser(c *gin.Context) {
-	var req CreateUserRequest
+	var req UserCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{
 			"code": 400,
@@ -269,6 +261,30 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	// 检查邮箱是否存在
+	if req.Email != "" {
+		database.DB.Model(&models.User{}).Where("email = ?", req.Email).Count(&count)
+		if count > 0 {
+			c.JSON(400, gin.H{
+				"code": 400,
+				"msg":  "邮箱已存在",
+			})
+			return
+		}
+	}
+
+	// 检查手机号是否存在
+	if req.Phone != "" {
+		database.DB.Model(&models.User{}).Where("phone = ?", req.Phone).Count(&count)
+		if count > 0 {
+			c.JSON(400, gin.H{
+				"code": 400,
+				"msg":  "手机号已存在",
+			})
+			return
+		}
+	}
+
 	// 加密密码
 	hashedPassword, err := utils.HashPassword(req.Password)
 	if err != nil {
@@ -286,7 +302,6 @@ func CreateUser(c *gin.Context) {
 		Phone:    req.Phone,
 		Avatar:   req.Avatar,
 		Status:   req.Status,
-		IsAdmin:  req.IsAdmin,
 	}
 
 	if err := database.DB.Create(&user).Error; err != nil {
@@ -297,6 +312,9 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
+	// 隐藏密码
+	user.Password = ""
+
 	c.JSON(200, gin.H{
 		"code": 200,
 		"msg":  "创建成功",
@@ -306,19 +324,19 @@ func CreateUser(c *gin.Context) {
 
 // UpdateUser godoc
 // @Summary 更新用户
-// @Description 更新用户信息（管理员接口）
+// @Description 更新普通用户信息（管理员接口）
 // @Tags 用户管理
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "用户ID"
-// @Param request body UpdateUserRequest true "更新信息"
+// @Param request body UserUpdateRequest true "更新信息"
 // @Success 200 {object} map[string]interface{} "code:200,msg:更新成功"
 // @Router /api/admin/users/{id} [put]
 func UpdateUser(c *gin.Context) {
 	userID := c.Param("id")
 
-	var req UpdateUserRequest
+	var req UserUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{
 			"code": 400,
@@ -349,8 +367,13 @@ func UpdateUser(c *gin.Context) {
 	if req.Status != nil {
 		updates["status"] = *req.Status
 	}
-	if req.IsAdmin != nil {
-		updates["is_admin"] = *req.IsAdmin
+
+	if len(updates) == 0 {
+		c.JSON(400, gin.H{
+			"code": 400,
+			"msg":  "没有需要更新的字段",
+		})
+		return
 	}
 
 	if err := database.DB.Model(&user).Updates(updates).Error; err != nil {
@@ -369,7 +392,7 @@ func UpdateUser(c *gin.Context) {
 
 // DeleteUser godoc
 // @Summary 删除用户
-// @Description 删除用户（管理员接口）
+// @Description 删除普通用户（管理员接口）
 // @Tags 用户管理
 // @Accept json
 // @Produce json
@@ -389,6 +412,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
+	// 软删除
 	if err := database.DB.Delete(&user).Error; err != nil {
 		c.JSON(500, gin.H{
 			"code": 500,
@@ -405,19 +429,19 @@ func DeleteUser(c *gin.Context) {
 
 // ResetUserPassword godoc
 // @Summary 重置用户密码
-// @Description 重置用户密码（管理员接口）
+// @Description 重置普通用户密码（管理员接口）
 // @Tags 用户管理
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "用户ID"
-// @Param request body ResetPasswordRequest true "密码信息"
+// @Param request body UserResetPasswordRequest true "密码信息"
 // @Success 200 {object} map[string]interface{} "code:200,msg:重置成功"
 // @Router /api/admin/users/{id}/password [post]
 func ResetUserPassword(c *gin.Context) {
 	userID := c.Param("id")
 
-	var req ResetPasswordRequest
+	var req UserResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, gin.H{
 			"code": 400,
@@ -459,25 +483,34 @@ func ResetUserPassword(c *gin.Context) {
 	})
 }
 
-// Request structs
-type CreateUserRequest struct {
+// Request structs for User management
+type UserCreateRequest struct {
 	Username string `json:"username" binding:"required,min=3,max=50"`
 	Password string `json:"password" binding:"required,min=6"`
-	Email    string `json:"email" binding:"omitempty,email"`
-	Phone    string `json:"phone" binding:"omitempty,len=11"`
+	Email    string `json:"email" binding:"omitempty,email,max=100"`
+	Phone    string `json:"phone" binding:"omitempty,max=20"`
 	Avatar   string `json:"avatar"`
 	Status   int    `json:"status" binding:"omitempty,oneof=0 1"`
-	IsAdmin  bool   `json:"is_admin"`
 }
 
-type UpdateUserRequest struct {
-	Email    string `json:"email" binding:"omitempty,email"`
-	Phone    string `json:"phone" binding:"omitempty,len=11"`
-	Avatar   string `json:"avatar"`
-	Status   *int   `json:"status" binding:"omitempty,oneof=0 1"`
-	IsAdmin  *bool  `json:"is_admin"`
+type UserUpdateRequest struct {
+	Email  string `json:"email" binding:"omitempty,email,max=100"`
+	Phone  string `json:"phone" binding:"omitempty,max=20"`
+	Avatar string `json:"avatar"`
+	Status *int   `json:"status" binding:"omitempty,oneof=0 1"`
 }
 
-type ResetPasswordRequest struct {
+type UserUpdateProfileRequest struct {
+	Email  string `json:"email" binding:"omitempty,email"`
+	Phone  string `json:"phone" binding:"omitempty,len=11"`
+	Avatar string `json:"avatar"`
+}
+
+type UserChangePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=6"`
+}
+
+type UserResetPasswordRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }

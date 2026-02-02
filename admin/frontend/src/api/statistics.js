@@ -38,7 +38,7 @@ export function getRevenueReport(params) {
 // 获取订单趋势
 export function getOrderTrend(params) {
   return request({
-    url: '/api/admin/stats/order',
+    url: '/api/admin/stats/order/trend',
     method: 'get',
     params
   })

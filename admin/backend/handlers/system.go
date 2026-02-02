@@ -291,6 +291,91 @@ func DeleteSystemConfig(c *gin.Context) {
 	})
 }
 
+// BatchSaveConfigs godoc
+// @Summary 批量保存系统配置
+// @Description 批量保存或更新系统配置
+// @Tags 管理员
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body object true "配置数组"
+// @Success 200 {object} map[string]interface{} "code:200,msg:保存成功"
+// @Router /api/admin/configs/batch [post]
+func BatchSaveConfigs(c *gin.Context) {
+	var req struct {
+		Configs []models.SystemConfig `json:"configs"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, gin.H{
+			"code": 400,
+			"msg":  "参数错误: " + err.Error(),
+		})
+		return
+	}
+
+	// 使用事务批量保存
+	tx := database.DB.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	for _, config := range req.Configs {
+		var existingConfig models.SystemConfig
+		err := tx.Where("key = ?", config.Key).First(&existingConfig).Error
+
+		if err != nil {
+			// 创建新配置
+			if err := tx.Create(&config).Error; err != nil {
+				tx.Rollback()
+				c.JSON(500, gin.H{
+					"code": 500,
+					"msg":  "保存失败: " + err.Error(),
+				})
+				return
+			}
+		} else {
+			// 更新现有配置
+			updates := map[string]interface{}{
+				"value":    config.Value,
+				"category": config.Category,
+			}
+			if config.Label != "" {
+				updates["label"] = config.Label
+			}
+			if config.Type != "" {
+				updates["type"] = config.Type
+			}
+			if err := tx.Model(&existingConfig).Updates(updates).Error; err != nil {
+				tx.Rollback()
+				c.JSON(500, gin.H{
+					"code": 500,
+					"msg":  "保存失败: " + err.Error(),
+				})
+				return
+			}
+		}
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(500, gin.H{
+			"code": 500,
+			"msg":  "保存失败: " + err.Error(),
+		})
+		return
+	}
+
+	// 记录日志
+	go logSystemAction(c, "批量保存配置", "系统管理", "批量保存配置", nil)
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "保存成功",
+	})
+}
+
 // logSystemAction 记录系统日志
 func logSystemAction(c *gin.Context, action, module, description string, requestData interface{}) {
 	// 从上下文获取用户信息

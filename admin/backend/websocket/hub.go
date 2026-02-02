@@ -670,3 +670,25 @@ func BuildRevokeMessage(messageID string) []byte {
 	})
 	return msg
 }
+
+// SendToUser 发送消息给指定用户
+func SendToUser(userID uint, message []byte) bool {
+	if globalHub == nil {
+		return false
+	}
+
+	globalHub.mu.RLock()
+	client, ok := globalHub.clients[userID]
+	globalHub.mu.RUnlock()
+
+	if !ok {
+		return false
+	}
+
+	select {
+	case client.Send <- message:
+		return true
+	default:
+		return false
+	}
+}
