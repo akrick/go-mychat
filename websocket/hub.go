@@ -194,6 +194,75 @@ func HandleChatWebSocket(c *gin.Context) {
 	go client.writePump()
 }
 
+// HandleCounselorWebSocket 处理咨询师专用WebSocket连接
+// 此连接允许咨询师接收新订单通知、会话状态变更等
+func HandleCounselorWebSocket(c *gin.Context) {
+	// 从URL参数获取token
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "缺少token"})
+		return
+	}
+
+	// 从URL参数获取咨询师ID
+	counselorIDStr := c.Param("id")
+	if counselorIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少咨询师ID"})
+		return
+	}
+
+	// 验证token
+	claims, err := utils.ParseToken(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "token无效"})
+		return
+	}
+
+	// 解析counselorID
+	counselorID, err := strconv.ParseUint(counselorIDStr, 10, 32)
+	if err != nil {
+		log.Printf("无效的咨询师ID: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的咨询师ID"})
+		return
+	}
+
+	// 验证用户是否为该咨询师
+	var counselor models.Counselor
+	if err := database.DB.Where("id = ? AND user_id = ?", counselorID, claims.UserID).First(&counselor).Error; err != nil {
+		log.Printf("咨询师验证失败: %v", err)
+		c.JSON(http.StatusForbidden, gin.H{"error": "无权访问"})
+		return
+	}
+
+	// 升级HTTP连接到WebSocket
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Printf("WebSocket升级失败: %v", err)
+		return
+	}
+
+	client := &Client{
+		ID:   claims.UserID,
+		Conn: conn,
+		Send: make(chan []byte, 256),
+	}
+
+	// 注册客户端
+	globalHub.register <- client
+
+	log.Printf("咨询师 WebSocket 连接建立: counselorID=%d, userID=%d", counselorID, claims.UserID)
+
+	// 发送初始连接成功消息
+	client.sendMessage("connected", gin.H{
+		"counselor_id": counselorID,
+		"timestamp":    time.Now().Unix(),
+	})
+
+	// 启动读写协程
+	go client.readPump()
+	go client.writePump()
+}
+
 // WSMessage WebSocket消息结构
 type WSMessage struct {
 	Type      string         `json:"type"`      // 消息类型: join, message, leave, billing, end

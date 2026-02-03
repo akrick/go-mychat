@@ -74,7 +74,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getFormList, getFormDataList } from '@/api/lowcode'
+import { getFormList, getFormDataList, deleteFormData } from '@/api/lowcode'
 
 const loading = ref(false)
 const detailDialogVisible = ref(false)
@@ -165,12 +165,13 @@ const handleDelete = async (row) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    // TODO: 实现删除接口
+    await deleteFormData(queryForm.formId, row.id)
     ElMessage.success('删除成功')
     loadTableData()
   } catch (error) {
     if (error !== 'cancel') {
       console.error(error)
+      ElMessage.error(error.message || '删除失败')
     }
   }
 }

@@ -51,3 +51,12 @@ export const assignPermissions = (id, data) => {
     data
   })
 }
+
+// 获取角色用户列表
+export const getRoleUsers = (roleId, page, pageSize) => {
+  return request({
+    url: `/api/admin/roles/${roleId}/users`,
+    method: 'get',
+    params: { page, pageSize }
+  })
+}

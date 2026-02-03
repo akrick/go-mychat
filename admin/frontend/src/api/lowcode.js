@@ -52,6 +52,14 @@ export const getFormDataList = (formId, params) => {
   })
 }
 
+// 删除表单数据
+export const deleteFormData = (formId, dataId) => {
+  return request({
+    url: `/api/admin/lowcode/forms/${formId}/data/${dataId}`,
+    method: 'delete'
+  })
+}
+
 // 获取页面列表
 export const getPageList = (params) => {
   return request({

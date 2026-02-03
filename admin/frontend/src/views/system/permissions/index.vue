@@ -170,6 +170,7 @@ const dialogTitle = ref('')
 const formRef = ref(null)
 const tableData = ref([])
 const parentOptions = ref([])
+const allPermissions = ref([]) // 保存完整的权限树用于搜索过滤
 
 const iconList = [
   { label: 'User', value: 'User' },
@@ -224,7 +225,8 @@ const loadPermissions = async () => {
   loading.value = true
   try {
     const res = await getPermissionTree()
-    tableData.value = res.data || res || []
+    allPermissions.value = res.data || res || []
+    filterPermissions()
     parentOptions.value = res.data || res || []
   } catch (error) {
     ElMessage.error(error.message || '获取权限列表失败')
@@ -234,8 +236,30 @@ const loadPermissions = async () => {
 }
 
 const handleQuery = () => {
-  // TODO: 添加搜索功能
-  ElMessage.info('搜索功能开发中')
+  filterPermissions()
+}
+
+// 递归过滤权限树
+const filterTree = (data, name, type) => {
+  return data
+    .map(item => {
+      const filteredChildren = item.children ? filterTree(item.children, name, type) : []
+      return { ...item, children: filteredChildren }
+    })
+    .filter(item => {
+      const matchName = !name || item.name.includes(name)
+      const matchType = !type || item.type === type
+      const hasChildren = item.children && item.children.length > 0
+      return (matchName && matchType) || hasChildren
+    })
+}
+
+const filterPermissions = () => {
+  if (!queryForm.name && !queryForm.type) {
+    tableData.value = allPermissions.value
+  } else {
+    tableData.value = filterTree(allPermissions.value, queryForm.name, queryForm.type)
+  }
 }
 
 const handleReset = () => {

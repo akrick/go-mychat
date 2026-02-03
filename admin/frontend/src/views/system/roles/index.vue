@@ -207,7 +207,7 @@
 import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh } from '@element-plus/icons-vue'
-import { getRoleList, createRole, updateRole, deleteRole, getRolePermissions, assignPermissions } from '@/api/role'
+import { getRoleList, createRole, updateRole, deleteRole, getRolePermissions, assignPermissions, getRoleUsers } from '@/api/role'
 import { getPermissionTree } from '@/api/permission'
 
 const loading = ref(false)
@@ -448,12 +448,9 @@ const handleViewUsers = async (row) => {
 const loadRoleUsers = async () => {
   try {
     userLoading.value = true
-    // TODO: 调用获取角色用户列表接口
-    // const res = await getRoleUsers(currentRoleId.value, userPage.value, 10)
-    // roleUsers.value = res.list || []
-    // userTotal.value = res.total || 0
-    roleUsers.value = []
-    userTotal.value = 0
+    const res = await getRoleUsers(currentRoleId.value, userPage.value, 10)
+    roleUsers.value = res.list || []
+    userTotal.value = res.total || 0
   } catch (error) {
     ElMessage.error(error.message || '获取角色用户失败')
   } finally {
