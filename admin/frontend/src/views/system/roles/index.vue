@@ -449,8 +449,8 @@ const loadRoleUsers = async () => {
   try {
     userLoading.value = true
     const res = await getRoleUsers(currentRoleId.value, userPage.value, 10)
-    roleUsers.value = res.list || []
-    userTotal.value = res.total || 0
+    roleUsers.value = res.data?.list || res.list || []
+    userTotal.value = res.data?.total || res.total || 0
   } catch (error) {
     ElMessage.error(error.message || '获取角色用户失败')
   } finally {

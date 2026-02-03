@@ -33,6 +33,11 @@ type LowcodeFormData struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// TableName 指定表名
+func (LowcodeFormData) TableName() string {
+	return "form_data_records"
+}
+
 // RolePermission 角色权限关联表
 type RolePermission struct {
 	ID           uint `gorm:"primarykey" json:"id"`

@@ -164,6 +164,7 @@ func main() {
 			admin.DELETE("/roles/:id", handlers.DeleteRole)
 			admin.GET("/roles/:id/permissions", handlers.GetRolePermissions)
 			admin.PUT("/roles/:id/permissions", handlers.AssignPermissions)
+			admin.GET("/roles/:id/users", handlers.GetRoleUsers)
 
 			admin.GET("/permissions/tree", handlers.GetPermissionTree)
 			admin.GET("/permissions", handlers.GetPermissionList)
@@ -194,6 +195,7 @@ func main() {
 
 			admin.GET("/lowcode/forms/:id/data", handlers.GetFormDataList)
 			admin.POST("/lowcode/forms/:id/submit", handlers.SubmitFormData)
+			admin.DELETE("/lowcode/forms/:id/data/:dataId", handlers.DeleteFormData)
 		}
 	}
 

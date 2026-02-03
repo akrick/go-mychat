@@ -174,6 +174,55 @@ func AssignPermissions(c *gin.Context) {
 	})
 }
 
+// GetRoleUsers 获取角色用户列表
+func GetRoleUsers(c *gin.Context) {
+	roleID := c.Param("id")
+	page := c.DefaultQuery("page", "1")
+	pageSize := c.DefaultQuery("pageSize", "10")
+
+	// 查询拥有该角色的用户
+	type User struct {
+		ID        uint   `json:"id"`
+		Username  string `json:"username"`
+		Nickname  string `json:"nickname"`
+		Email     string `json:"email"`
+		Status    int    `json:"status"`
+		CreatedAt string `json:"created_at"`
+	}
+
+	var users []User
+	query := `
+		SELECT u.id, u.username, u.nickname, u.email, u.status, u.created_at
+		FROM users u
+		INNER JOIN user_roles ur ON u.id = ur.user_id
+		WHERE ur.role_id = ?
+		ORDER BY u.created_at DESC
+		LIMIT ? OFFSET ?
+	`
+
+	offset := (utils.ParseInt(page) - 1) * utils.ParseInt(pageSize)
+	if err := database.DB.Raw(query, roleID, utils.ParseInt(pageSize), offset).Scan(&users).Error; err != nil {
+		c.JSON(500, gin.H{
+			"code": 500,
+			"msg":  "查询失败",
+		})
+		return
+	}
+
+	// 获取总数
+	var total int64
+	database.DB.Raw("SELECT COUNT(*) FROM user_roles WHERE role_id = ?", roleID).Scan(&total)
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "获取成功",
+		"data": gin.H{
+			"list":  users,
+			"total": total,
+		},
+	})
+}
+
 // GetPermissionTree 获取权限树
 func GetPermissionTree(c *gin.Context) {
 	var permissions []models.Permission

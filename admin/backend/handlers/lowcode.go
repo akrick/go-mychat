@@ -249,6 +249,34 @@ func GetFormDataList(c *gin.Context) {
 	})
 }
 
+// DeleteFormData 删除表单数据
+func DeleteFormData(c *gin.Context) {
+	formID := c.Param("id")
+	dataID := c.Param("dataId")
+
+	result := database.DB.Table("form_data_records").Where("id = ? AND form_id = ?", dataID, formID).Delete(nil)
+	if result.Error != nil {
+		c.JSON(500, gin.H{
+			"code": 500,
+			"msg":  "删除失败",
+		})
+		return
+	}
+
+	if result.RowsAffected == 0 {
+		c.JSON(404, gin.H{
+			"code": 404,
+			"msg":  "记录不存在",
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "删除成功",
+	})
+}
+
 
 
 // GetPageList 获取页面列表
