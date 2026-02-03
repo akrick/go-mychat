@@ -31,7 +31,10 @@ export function useWebSocket(sessionId, options = {}) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const host = window.location.host
     const token = localStorage.getItem('token')
-    return `${protocol}//${host}/ws/chat/${sessionId}?token=${token}`
+    // 开发环境使用代理
+    const wsUrl = `${protocol}//${host}/ws/chat/${sessionId}?token=${token}`
+    console.log('WebSocket URL:', wsUrl)
+    return wsUrl
   }
 
   // 连接WebSocket

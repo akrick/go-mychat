@@ -30,7 +30,7 @@ import (
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host localhost:8080
+// @host localhost:3002
 // @BasePath /
 func main() {
 	// 初始化数据库
@@ -137,9 +137,9 @@ func main() {
 	// 启动服务
 	log.Println("==================================================")
 	log.Println("MyChat API 服务启动")
-	log.Println("地址: :8080")
+	log.Println("地址: :3002")
 	log.Println("PID:", os.Getpid())
-	log.Println("Swagger文档: http://localhost:8080/swagger/index.html")
+	log.Println("Swagger文档: http://localhost:3002/swagger/index.html")
 	if cache.Rdb != nil {
 		log.Println("缓存状态: Redis + SingleFlight防穿透")
 	}
@@ -167,7 +167,7 @@ func main() {
 	}()
 
 	// 启动服务
-	if err := r.Run(":8080"); err != nil {
+	if err := r.Run(":3002"); err != nil {
 		log.Fatalf("启动失败: %v", err)
 	}
 }

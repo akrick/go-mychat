@@ -125,7 +125,7 @@ func CreateOrder(c *gin.Context) {
 		Duration:     req.Duration,
 		Amount:       amount,
 		Status:       models.OrderStatusPending,
-		ScheduleTime: req.ScheduleTime,
+		ScheduleTime: req.ScheduleTime.Time,
 		Notes:        req.Notes,
 	}
 

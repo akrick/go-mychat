@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -128,6 +129,61 @@ func HandleWebSocket(c *gin.Context) {
 		ID:   claims.UserID,
 		Conn: conn,
 		Send: make(chan []byte, 256),
+	}
+
+	// 注册客户端
+	globalHub.register <- client
+
+	// 启动读写协程
+	go client.readPump()
+	go client.writePump()
+}
+
+// HandleChatWebSocket 处理聊天室WebSocket连接
+func HandleChatWebSocket(c *gin.Context) {
+	// 从URL参数获取token
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "缺少token"})
+		return
+	}
+
+	// 从URL参数获取sessionId
+	sessionIDStr := c.Param("sessionId")
+	if sessionIDStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "缺少sessionId"})
+		return
+	}
+
+	// 验证token
+	claims, err := utils.ParseToken(token)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "token无效"})
+		return
+	}
+
+	// 升级HTTP连接到WebSocket
+	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		log.Printf("WebSocket升级失败: %v", err)
+		return
+	}
+
+	// 解析sessionId
+	sessionID, err := strconv.ParseUint(sessionIDStr, 10, 32)
+	if err != nil {
+		log.Printf("无效的sessionId: %v", err)
+		conn.Close()
+		return
+	}
+
+	sid := uint(sessionID)
+
+	client := &Client{
+		ID:        claims.UserID,
+		Conn:      conn,
+		Send:      make(chan []byte, 256),
+		SessionID: &sid,
 	}
 
 	// 注册客户端

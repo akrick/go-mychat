@@ -198,6 +198,6 @@ func main() {
 	}
 
 	// 启动服务
-	fmt.Println("管理后台服务启动在端口 :8081")
-	log.Fatal(r.Run(":8081"))
+	fmt.Println("管理后台服务启动在端口 :3003")
+	log.Fatal(r.Run(":3003"))
 }

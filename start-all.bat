@@ -1,46 +1,46 @@
 @echo off
-REM MyChat 服务启动脚本
-REM 启动所有三个服务: 用户端API(8080)、管理后台API(8081)、WebSocket(8082)
+REM MyChat ?A?U?D?V??
+REM ?D?V????T?��A?U: ?????API(3002)?B??z?Z?xAPI(3003)?BWebSocket(3004)
 
 echo ========================================
-echo    MyChat 服务启动脚本
+echo    MyChat ?A?U?D?V??
 echo ========================================
 echo.
 
-REM 检查是否已安装 Go
+REM ??d?O?_?w?w?? Go
 where go >nul 2>nul
 if %errorlevel% neq 0 (
-    echo [错误] 未检测到 Go 环境，请先安装 Go 1.20+
+    echo [??] ?????? Go ???A????w?? Go 1.20+
     pause
     exit /b 1
 )
 
-echo [1/3] 启动用户端 API (端口 8080)...
-start "MyChat User API - 8080" cmd /k "cd /d %~dp0api && go run main.go"
+echo [1/3] ?D?V????? API (??f 3002)...
+start "MyChat User API - 3002" cmd /k "cd /d %~dp0 && api.exe"
 timeout /t 2 >nul
 
-echo [2/3] 启动管理后台 API (端口 8081)...
-start "MyChat Admin API - 8081" cmd /k "cd /d %~dp0admin\backend && go run main.go"
+echo [2/3] ?D?V??z?Z?x API (??f 3003)...
+start "MyChat Admin API - 3003" cmd /k "cd /d %~dp0 && admin-backend.exe"
 timeout /t 2 >nul
 
-echo [3/3] 启动 WebSocket 服务 (端口 8082)...
-start "MyChat WebSocket - 8082" cmd /k "cd /d %~dp0websocket && go run main.go"
+echo [3/3] ?D?V WebSocket ?A?U (??f 3004)...
+start "MyChat WebSocket - 3004" cmd /k "cd /d %~dp0 && websocket.exe"
 timeout /t 2 >nul
 
 echo.
 echo ========================================
-echo    所有服务已启动！
+echo    ????A?U?w?D?V?I
 echo ========================================
 echo.
-echo 服务地址:
-echo   - 用户端 API:    http://localhost:8080
-echo   - 管理后台 API:  http://localhost:8081
-echo   - WebSocket:     ws://localhost:8082
+echo ?A?U?a?}:
+echo   - ????? API:    http://localhost:3002
+echo   - ??z?Z?x API:  http://localhost:3003
+echo   - WebSocket:     ws://localhost:3004
 echo.
-echo 文档:
-echo   - Swagger文档:   http://localhost:8080/swagger/index.html
-echo   - 项目文档:      docs/README.md
+echo ???:
+echo   - Swagger???:   http://localhost:3002/swagger/index.html
+echo   - ?????:      docs/README.md
 echo.
-echo 提示: 每个服务在独立的窗口中运行，关闭窗口即停止服务
+echo ????: ?C?��A?U?b???????f???`??A?????f?Y????A?U
 echo.
 pause

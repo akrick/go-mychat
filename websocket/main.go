@@ -39,6 +39,7 @@ func main() {
 
 	// WebSocket 路由
 	r.GET("/ws", HandleWebSocket)
+	r.GET("/ws/chat/:sessionId", HandleChatWebSocket)
 	// r.GET("/ws/counselor/:id", HandleCounselorWebSocket) // TODO: 待实现咨询师专用WebSocket处理
 
 	// 统计信息路由
@@ -53,12 +54,12 @@ func main() {
 	// 启动服务
 	log.Println("==================================================")
 	log.Println("MyChat WebSocket 服务启动")
-	log.Println("地址: :8082")
-	log.Println("WebSocket: ws://localhost:8082/ws")
-	log.Println("咨询师: ws://localhost:8082/ws/counselor/{id}")
+	log.Println("地址: :3004")
+	log.Println("WebSocket: ws://localhost:3004/ws")
+	log.Println("咨询师: ws://localhost:3004/ws/counselor/{id}")
 	log.Println("==================================================")
 
-	if err := r.Run(":8082"); err != nil {
+	if err := r.Run(":3004"); err != nil {
 		log.Fatalf("启动失败: %v", err)
 	}
 }
