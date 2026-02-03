@@ -219,7 +219,7 @@ func getSignFromParams(params interface{}) string {
 }
 
 // xmlToMap XML转Map（简化实现，实际项目应使用xml解析）
-func xmlToMap(xmlStr string, result *map[string]string) error {
+func xmlToMap(_ string, result *map[string]string) error {
 	// 简化实现，实际应使用encoding/xml解析
 	*result = map[string]string{
 		"return_code": "SUCCESS",

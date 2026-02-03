@@ -12,11 +12,55 @@ import (
 	"gorm.io/gorm"
 )
 
+// CustomTime 自定义时间类型，支持解析多种格式
+type CustomTime struct {
+	time.Time
+}
+
+// UnmarshalJSON 自定义JSON反序列化
+func (ct *CustomTime) UnmarshalJSON(data []byte) error {
+	// 尝试解析带时区的格式
+	layout := "2006-01-02T15:04:05Z07:00"
+	t, err := time.Parse(layout, string(data))
+	if err == nil {
+		ct.Time = t
+		return nil
+	}
+
+	// 尝试解析不带时区的格式
+	layout = "2006-01-02T15:04:05"
+	t, err = time.Parse(layout, string(data))
+	if err == nil {
+		ct.Time = t
+		return nil
+	}
+
+	// 尝试解析其他常见格式
+	layouts := []string{
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+	}
+	for _, l := range layouts {
+		t, err = time.Parse(l, string(data))
+		if err == nil {
+			ct.Time = t
+			return nil
+		}
+	}
+
+	return fmt.Errorf("无法解析时间: %s", string(data))
+}
+
+// MarshalJSON 自定义JSON序列化
+func (ct CustomTime) MarshalJSON() ([]byte, error) {
+	return []byte(ct.Time.Format(`"2006-01-02T15:04:05"`)), nil
+}
+
 type CreateOrderRequest struct {
-	CounselorID  uint      `json:"counselor_id" binding:"required"`
-	Duration     int       `json:"duration" binding:"required,min=15,max=180"`
-	ScheduleTime time.Time `json:"schedule_time" binding:"required"`
-	Notes        string    `json:"notes"`
+	CounselorID  uint        `json:"counselor_id" binding:"required"`
+	Duration     int         `json:"duration" binding:"required,min=15,max=180"`
+	ScheduleTime CustomTime  `json:"schedule_time" binding:"required"`
+	Notes        string      `json:"notes"`
 }
 
 type UpdateOrderRequest struct {

@@ -539,7 +539,7 @@ func RefundPayment(c *gin.Context) {
 }
 
 // createWeChatPayment 创建微信支付
-func createWeChatPayment(order *models.Order, payment *models.Payment, clientIP string) (string, map[string]string) {
+func createWeChatPayment(_ *models.Order, payment *models.Payment, clientIP string) (string, map[string]string) {
 	// 初始化微信支付
 	wechatPay := utils.NewWeChatPay(
 		"wx_app_id",
@@ -625,13 +625,13 @@ func createAlipayPayment(order *models.Order, payment *models.Payment, returnURL
 }
 
 // weChatRefund 微信退款（模拟）
-func weChatRefund(payment *models.Payment, refundAmount float64, reason string) bool {
+func weChatRefund(_ *models.Payment, _ float64, _ string) bool {
 	// 实际项目中需要调用微信退款API
 	return true
 }
 
 // alipayRefund 支付宝退款（模拟）
-func alipayRefund(payment *models.Payment, refundAmount float64, reason string) bool {
+func alipayRefund(_ *models.Payment, _ float64, _ string) bool {
 	// 实际项目中需要调用支付宝退款API
 	return true
 }

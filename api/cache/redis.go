@@ -29,7 +29,7 @@ type UserInfoCache struct {
 func InitRedis() error {
 	Rdb = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
-		Password: "123456",
+		Password: "",
 		DB:       0,
 	})
 
@@ -57,7 +57,7 @@ func GetUserInfoWithCache(ctx context.Context, userID uint) (*UserInfoCache, err
 	cacheKey := getUserCacheKey(userID)
 
 	// 使用singleflight防止缓存穿透
-	result, err, _ := Request.Do(cacheKey, func() (interface{}, error) {
+	result, err, _ := Request.Do(cacheKey, func() (any, error) {
 		// 1. 先从缓存获取
 		cachedData, err := Rdb.Get(ctx, cacheKey).Result()
 		if err == nil {

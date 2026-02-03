@@ -120,7 +120,7 @@ const routes = [
         path: 'online',
         name: 'Online',
         component: () => import('@/views/business/online/index.vue'),
-        meta: { title: '在线用户', icon: 'User', permission: 'system:online:list' }
+        meta: { title: '在线用户', icon: 'User' }
       },
       {
         path: 'config',

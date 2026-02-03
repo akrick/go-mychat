@@ -637,3 +637,58 @@ func AdminLogout(c *gin.Context) {
 		"msg":  "退出成功",
 	})
 }
+
+// MuteUser godoc
+// @Summary 禁言/解禁用户
+// @Description 禁言或解禁指定咨询师（预留功能，当前数据库未支持）
+// @Tags 在线用户
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body map[string]interface{} true "禁言信息:user_id,is_muted"
+// @Success 200 {object} map[string]interface{} "code:200,msg:操作成功"
+// @Router /api/admin/online/mute [post]
+func MuteUser(c *gin.Context) {
+	// 当前数据库模型没有is_muted字段，此接口暂时返回成功
+	// 如需启用，请先在CounselorApplication表中添加is_muted字段
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "操作成功（功能待启用）",
+	})
+}
+
+// GetOnlineStatistics godoc
+// @Summary 获取在线统计
+// @Description 获取在线用户统计数据
+// @Tags 在线用户
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} map[string]interface{} "code:200,msg:获取成功,data:{statistics}"
+// @Router /api/admin/online/statistics [get]
+func GetOnlineStatistics(c *gin.Context) {
+	// 获取在线用户
+	onlineUserIDs := websocket.GetOnlineUsers()
+	totalOnline := len(onlineUserIDs)
+
+	// 统计咨询师在线数（通过CounselorApplication状态为1的用户）
+	var onlineCounselorCount int64
+	database.DB.Model(&models.CounselorApplication{}).
+		Where("user_id IN (?) AND status = 1", onlineUserIDs).
+		Count(&onlineCounselorCount)
+
+	// 普通用户在线数
+	regularUserCount := totalOnline - int(onlineCounselorCount)
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg": "获取成功",
+		"data": gin.H{
+			"total_online":       totalOnline,
+			"counselor_online":   int(onlineCounselorCount),
+			"user_online":        regularUserCount,
+			"muted_counselor":    0, // 数据库暂不支持
+			"muted_online_count": 0,
+		},
+	})
+}

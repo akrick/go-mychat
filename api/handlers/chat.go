@@ -390,3 +390,56 @@ func GetChatSessions(c *gin.Context) {
 		},
 	})
 }
+
+// GetOrderSessionId godoc
+// @Summary 获取订单的会话ID
+// @Description 根据订单ID获取聊天会话（用户端使用）
+// @Tags 聊天
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param order_id path int true "订单ID"
+// @Success 200 {object} map[string]interface{} "code:200,msg:获取成功,data:{session_id}"
+// @Failure 404 {object} map[string]interface{} "会话不存在"
+// @Router /api/chat/order/{order_id}/session [get]
+func GetOrderSessionId(c *gin.Context) {
+	userID, _ := c.Get("user_id")
+	orderID := c.Param("order_id")
+
+	// 查询订单
+	var order models.Order
+	if err := database.DB.First(&order, orderID).Error; err != nil {
+		c.JSON(404, gin.H{
+			"code": 404,
+			"msg":  "订单不存在",
+		})
+		return
+	}
+
+	// 检查权限
+	if order.UserID != userID.(uint) {
+		c.JSON(403, gin.H{
+			"code": 403,
+			"msg":  "无权访问此订单",
+		})
+		return
+	}
+
+	// 查询会话
+	var session models.ChatSession
+	if err := database.DB.Where("order_id = ?", orderID).First(&session).Error; err != nil {
+		c.JSON(404, gin.H{
+			"code": 404,
+			"msg":  "会话尚未创建，请等待咨询师发起",
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"code": 200,
+		"msg":  "获取成功",
+		"data": gin.H{
+			"session_id": session.ID,
+		},
+	})
+}

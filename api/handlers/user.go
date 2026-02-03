@@ -46,7 +46,7 @@ func UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	updates := make(map[string]interface{})
+	updates := make(map[string]any)
 	if req.Email != "" {
 		updates["email"] = req.Email
 	}
@@ -338,7 +338,7 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	updates := make(map[string]interface{})
+	updates := make(map[string]any)
 	if req.Email != "" {
 		updates["email"] = req.Email
 	}

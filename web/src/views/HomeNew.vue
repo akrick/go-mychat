@@ -4,7 +4,7 @@
 
     <!-- 轮播图 -->
     <div class="carousel-section">
-      <el-carousel :interval="5000" height="500px" indicator-position="outside" @change="handleCarouselChange">
+      <el-carousel :interval="5000" height="500px" indicator-position="outside">
         <el-carousel-item v-for="(item, index) in carouselItems" :key="index">
           <div class="carousel-item" :style="{ backgroundImage: `url(${item.image})` }">
             <div class="carousel-content">
@@ -377,18 +377,6 @@ const handleJoinCounselor = () => {
     router.push('/login')
   } else {
     router.push('/counselor-application')
-  }
-}
-
-// 处理轮播图指示器点击，第2个指示器跳转到个人中心
-const handleCarouselChange = (index) => {
-  if (index === 1 && router.currentRoute.value.path !== '/profile') {
-    if (!userStore.token) {
-      showWarning('请先登录')
-      router.push('/login')
-    } else {
-      router.push('/profile')
-    }
   }
 }
 </script>

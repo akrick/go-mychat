@@ -96,8 +96,11 @@
     <!-- 预约对话框 -->
     <el-dialog v-model="showOrderDialog" title="预约咨询" width="500px">
       <el-form :model="orderForm" :rules="orderRules" ref="orderFormRef" label-width="100px">
+        <el-form-item label="咨询师" prop="counselor_id" style="display: none">
+          <el-input v-model="orderForm.counselor_id" />
+        </el-form-item>
         <el-form-item label="咨询师">
-          <el-input v-model="counselor?.name" disabled />
+          <el-input :value="counselor?.name" disabled />
         </el-form-item>
         <el-form-item label="咨询时长" prop="duration">
           <el-select v-model="orderForm.duration" placeholder="请选择时长" style="width: 100%">
@@ -115,7 +118,7 @@
             type="datetime"
             placeholder="选择日期时间"
             format="YYYY-MM-DD HH:mm"
-            value-format="YYYY-MM-DDTHH:mm:ss"
+            value-format="YYYY-MM-DDTHH:mm:ss+08:00"
             style="width: 100%"
             :disabled-date="disabledDate"
           />
@@ -178,6 +181,7 @@ const totalAmount = computed(() => {
 })
 
 const orderRules = {
+  counselor_id: [{ required: true, message: '咨询师ID不能为空', trigger: 'blur' }],
   duration: [{ required: true, message: '请选择咨询时长', trigger: 'change' }],
   schedule_time: [{ required: true, message: '请选择预约时间', trigger: 'change' }]
 }
@@ -209,6 +213,8 @@ const formatTime = (time) => {
 }
 
 onMounted(async () => {
+  console.log('CounselorDetail页面已挂载，咨询师ID:', route.params.id)
+  console.log('完整路由:', route.fullPath)
   await loadCounselorDetail()
   await loadCounselorReviews()
 })
@@ -237,14 +243,23 @@ const loadCounselorReviews = async () => {
 }
 
 const handleSubmitOrder = async () => {
+  console.log('提交订单')
+  console.log('订单表单数据:', JSON.stringify(orderForm.value, null, 2))
+
   await orderFormRef.value.validate()
   submitting.value = true
+
   try {
-    await createOrder(orderForm.value)
+    console.log('开始创建订单')
+    const result = await createOrder(orderForm.value)
+    console.log('订单创建成功:', result)
     showSuccess(SUCCESS_MESSAGES.CREATE_ORDER)
     showOrderDialog.value = false
+    console.log('跳转到订单列表页')
     router.push('/orders')
   } catch (error) {
+    console.error('创建订单失败:', error)
+    console.error('错误详情:', error.response?.data)
     handleError(error, '创建订单失败')
   } finally {
     submitting.value = false

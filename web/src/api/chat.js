@@ -7,6 +7,17 @@ export function startChatSession(orderId) {
   })
 }
 
+/**
+ * 获取订单的会话ID
+ * @param {number} orderId - 订单ID
+ */
+export function getOrderSessionId(orderId) {
+  return request({
+    url: `/chat/order/${orderId}/session`,
+    method: 'get'
+  })
+}
+
 export function sendMessage(sessionId, data) {
   return request({
     url: `/chat/session/${sessionId}/message`,

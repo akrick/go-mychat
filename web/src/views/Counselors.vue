@@ -122,7 +122,7 @@
                 <span class="price-label">咨询费</span>
                 <span class="price-value">¥{{ counselor.price }}/分钟</span>
               </div>
-              <el-button type="primary" size="small" @click.stop="$router.push(`/counselor/${counselor.id}`)">
+              <el-button type="primary" size="small" @click.stop="handleBookCounselor(counselor)">
                 立即预约
               </el-button>
             </div>
@@ -182,6 +182,8 @@ const searchForm = reactive({
 })
 
 onMounted(() => {
+  console.log('Counselors页面已挂载，路由参数:', route.query)
+  console.log('用户登录状态:', !!userStore.token)
   // 检查是否有服务类型参数
   if (route.query.serviceType) {
     searchForm.keyword = route.query.serviceType
@@ -230,6 +232,27 @@ const handleJoinCounselor = () => {
     router.push('/login')
   } else {
     router.push('/counselor-application')
+  }
+}
+
+const handleBookCounselor = (counselor) => {
+  console.log('点击立即预约，咨询师ID:', counselor.id)
+  console.log('用户Token:', userStore.token ? '存在' : '不存在')
+
+  if (!userStore.token) {
+    console.log('用户未登录，跳转到登录页')
+    ElMessage.warning('请先登录')
+    router.push('/login')
+    return
+  }
+
+  try {
+    console.log('准备跳转到详情页:', `/counselor/${counselor.id}`)
+    router.push(`/counselor/${counselor.id}`)
+    console.log('路由跳转命令已执行')
+  } catch (error) {
+    console.error('路由跳转失败:', error)
+    ElMessage.error('跳转失败，请重试')
   }
 }
 </script>
@@ -483,12 +506,13 @@ const handleJoinCounselor = () => {
 /* 底部信息 */
 .card-footer {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 0 0 0;
   border-top: 1px solid #e8e8e8;
+  pointer-events: auto;
 }
 
 .price-info {
@@ -514,6 +538,10 @@ const handleJoinCounselor = () => {
   padding: 10px 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
+  position: relative;
+  z-index: 10;
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 .card-footer .el-button:hover {

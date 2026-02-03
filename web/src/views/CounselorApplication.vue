@@ -198,7 +198,7 @@
           </el-card>
 
           <!-- 提交成功 -->
-          <el-card v-if="showSuccess" class="step-card success-card">
+          <el-card v-if="applicationSuccess" class="step-card success-card">
             <el-result icon="success" title="申请提交成功" sub-title="我们将尽快审核您的申请，请耐心等待">
               <template #extra>
                 <el-button type="primary" @click="goToProfile">查看我的申请</el-button>
@@ -236,7 +236,7 @@ if (!userStore.token) {
 
 // 步骤控制
 const activeStep = ref(0)
-const showSuccess = ref(false)
+const applicationSuccess = ref(false)
 
 // 表单数据
 const form = reactive({
@@ -374,7 +374,7 @@ const handleSubmit = () => {
     createApplication(form)
       .then(() => {
         showSuccess('申请提交成功，请等待审核')
-        showSuccess.value = true
+        applicationSuccess.value = true
         submitting.value = false
       })
       .catch(error => {

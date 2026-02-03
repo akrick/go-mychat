@@ -123,6 +123,7 @@ func main() {
 
 	// 聊天接口（部分功能依赖 WebSocket 服务）
 	r.POST("/api/chat/start/:order_id", middleware.AuthMiddleware(), handlers.StartChatSession)
+	r.GET("/api/chat/order/:order_id/session", middleware.AuthMiddleware(), handlers.GetOrderSessionId)
 	r.POST("/api/chat/session/:session_id/message", middleware.AuthMiddleware(), handlers.SendMessage)
 	r.GET("/api/chat/messages/:session_id", middleware.AuthMiddleware(), handlers.GetMessages)
 	r.POST("/api/chat/end/:session_id", middleware.AuthMiddleware(), handlers.EndChatSession)

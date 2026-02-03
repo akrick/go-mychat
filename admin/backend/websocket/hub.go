@@ -628,6 +628,24 @@ func GetOnlineUsers() []uint {
 	return users
 }
 
+// GetOnlineUsersWithSessions 获取在线用户列表和会话信息
+func GetOnlineUsersWithSessions() map[uint]interface{} {
+	if globalHub == nil {
+		return map[uint]interface{}{}
+	}
+
+	globalHub.mu.RLock()
+	defer globalHub.mu.RUnlock()
+
+	result := make(map[uint]interface{})
+	for userID, client := range globalHub.clients {
+		result[userID] = map[string]interface{}{
+			"session_id": client.SessionID,
+		}
+	}
+	return result
+}
+
 // IsUserOnline 检查用户是否在线
 func IsUserOnline(userID uint) bool {
 	if globalHub == nil {
@@ -691,4 +709,47 @@ func SendToUser(userID uint, message []byte) bool {
 	default:
 		return false
 	}
+}
+
+// KickUser 踢用户下线
+func KickUser(userID uint) bool {
+	if globalHub == nil {
+		return false
+	}
+
+	globalHub.mu.Lock()
+	client, ok := globalHub.clients[userID]
+	if ok {
+		delete(globalHub.clients, userID)
+
+		// 如果用户在会话中，也从会话中移除
+		if client.SessionID != nil {
+			if sessionClients, ok := globalHub.sessions[*client.SessionID]; ok {
+				delete(sessionClients, userID)
+				if len(sessionClients) == 0 {
+					delete(globalHub.sessions, *client.SessionID)
+				}
+			}
+		}
+
+		// 发送踢下线通知
+		kickMsg, _ := json.Marshal(WSMessage{
+			Type: "kicked",
+			Data: gin.H{
+				"reason": "被管理员踢下线",
+			},
+		})
+		client.Send <- kickMsg
+		close(client.Send)
+
+		log.Printf("用户被踢下线: userID=%d", userID)
+	}
+	globalHub.mu.Unlock()
+
+	return ok
+}
+
+// BroadcastToUser 向指定用户广播消息
+func BroadcastToUser(userID uint, message []byte) bool {
+	return SendToUser(userID, message)
 }

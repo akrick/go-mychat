@@ -20,6 +20,25 @@
               </div>
               <div
                 v-for="message in messages"
+                :key="message.id || message.tempId"
+                :class="['message-item', message.sender_type === 'user' ? 'my-message' : 'other-message']"
+              >
+                <el-avatar :size="40" :src="message.sender?.avatar">
+                  <el-icon><User /></el-icon>
+                </el-avatar>
+                <div class="message-content">
+                  <p class="sender-name">{{ message.sender?.username }}</p>
+                  <div class="message-bubble">
+                    <span v-if="message.status === 'sending'" class="sending-indicator">
+                      <el-icon class="is-loading"><Loading /></el-icon>
+                    </span>
+                    {{ message.content }}
+                  </div>
+                  <p v-if="message.created_at" class="message-time">{{ formatTime(message.created_at) }}</p>
+                </div>
+              </div>
+              <div
+                v-for="message in messages"
                 :key="message.id"
                 :class="['message-item', message.sender_type === 'user' ? 'my-message' : 'other-message']"
               >
@@ -34,18 +53,29 @@
             </div>
 
             <div class="message-input">
+              <div class="connection-status">
+                <el-tag v-if="wsConnected" type="success" size="small">
+                  <el-icon><CircleCheck /></el-icon>
+                  已连接
+                </el-tag>
+                <el-tag v-else type="danger" size="small">
+                  <el-icon><CircleClose /></el-icon>
+                  未连接
+                </el-tag>
+              </div>
               <el-input
                 v-model="inputMessage"
                 type="textarea"
                 :rows="3"
                 placeholder="输入消息..."
-                @keydown.enter.prevent="handleSendMessage"
+                @keydown.enter.ctrl="handleSendMessage"
               />
               <div class="input-actions">
                 <span class="remaining-time" v-if="remainingTime > 0">
                   <el-icon><Timer /></el-icon>
                   剩余时间：{{ formatSeconds(remainingTime) }}
                 </span>
+                <span class="keyboard-tip">按 Ctrl+Enter 发送</span>
                 <el-button type="primary" :loading="sending" @click="handleSendMessage">
                   发送
                 </el-button>
@@ -88,12 +118,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { User, Timer } from '@element-plus/icons-vue'
+import { User, Timer, Loading, CircleCheck, CircleClose } from '@element-plus/icons-vue'
 import { getMessages, sendMessage, endChatSession } from '@/api/chat'
-import { formatSeconds } from '@/utils/formatter'
+import { useChatWebSocket } from '@/composables/useWebSocket'
+import { formatSeconds, formatTime } from '@/utils/formatter'
 import { handleError, showWarning, showSuccess } from '@/utils/errorHandler'
 import AppHeader from '@/components/AppHeader.vue'
 import AppFooter from '@/components/AppFooter.vue'
@@ -109,6 +140,10 @@ const inputMessage = ref('')
 const messageListRef = ref(null)
 const countdownTimer = ref(null)
 const remainingTime = ref(0)
+let tempIdCounter = 0
+
+// WebSocket连接
+const { connected: wsConnected, connect: wsConnect, sendTextMessage, close: wsClose } = useChatWebSocket(sessionId.value)
 
 const sessionInfo = reactive({
   counselor_name: '',
@@ -120,13 +155,22 @@ onMounted(async () => {
   await loadMessages()
   startCountdown()
   scrollBottom()
+  // 连接WebSocket
+  wsConnect()
 })
 
 onUnmounted(() => {
   if (countdownTimer.value) {
     clearInterval(countdownTimer.value)
   }
+  // 关闭WebSocket连接
+  wsClose()
 })
+
+// 监听新消息
+watch(() => messages.value, () => {
+  scrollBottom()
+}, { deep: true })
 
 const loadMessages = async () => {
   loading.value = true
@@ -172,20 +216,48 @@ const handleSendMessage = async () => {
     return
   }
 
-  sending.value = true
-  try {
-    await sendMessage(sessionId.value, {
-      content: inputMessage.value,
-      sender_type: 'user',
-      content_type: 'text'
-    })
-    inputMessage.value = ''
-    await loadMessages()
-    scrollBottom()
-  } catch (error) {
-    handleError(error, '发送消息失败')
-  } finally {
-    sending.value = false
+  const content = inputMessage.value.trim()
+  inputMessage.value = ''
+
+  // 添加临时消息到列表
+  const tempMessage = {
+    tempId: `temp_${tempIdCounter++}`,
+    content: content,
+    sender_type: 'user',
+    sender: {
+      username: '我',
+      avatar: ''
+    },
+    status: 'sending',
+    created_at: new Date().toISOString()
+  }
+  messages.value.push(tempMessage)
+
+  // 使用WebSocket发送
+  if (wsConnected.value) {
+    sendTextMessage(content)
+  } else {
+    // 如果WebSocket未连接，使用HTTP接口
+    sending.value = true
+    try {
+      await sendMessage(sessionId.value, {
+        content: content,
+        sender_type: 'user',
+        content_type: 'text'
+      })
+      // 移除临时消息，重新加载
+      messages.value = messages.value.filter(m => m.tempId !== tempMessage.tempId)
+      await loadMessages()
+    } catch (error) {
+      // 发送失败，更新状态
+      const msgIndex = messages.value.findIndex(m => m.tempId === tempMessage.tempId)
+      if (msgIndex !== -1) {
+        messages.value[msgIndex].status = 'failed'
+      }
+      handleError(error, '发送消息失败')
+    } finally {
+      sending.value = false
+    }
   }
 }
 
@@ -301,16 +373,40 @@ const scrollBottom = () => {
 }
 
 .message-bubble {
+  position: relative;
   padding: 12px 16px;
   border-radius: 8px;
   line-height: 1.6;
   word-break: break-all;
 }
 
+.message-bubble .sending-indicator {
+  margin-right: 8px;
+  color: #999;
+}
+
+.message-time {
+  margin: 6px 0 0 0;
+  font-size: 11px;
+  color: #999;
+}
+
 .message-input {
   padding: 16px;
   border-top: 1px solid #ebeef5;
   background: white;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.connection-status .el-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .input-actions {
@@ -326,6 +422,12 @@ const scrollBottom = () => {
   gap: 4px;
   color: #666;
   font-size: 14px;
+}
+
+.keyboard-tip {
+  margin-left: auto;
+  color: #999;
+  font-size: 12px;
 }
 
 .info-card h3 {

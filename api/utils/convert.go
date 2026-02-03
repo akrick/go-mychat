@@ -32,12 +32,3 @@ func ParseStringToUint(s string) uint {
 func EnsureDir(dir string) error {
 	return os.MkdirAll(dir, 0755)
 }
-
-// 为了向后兼容，提供旧名称
-func parseInt(s string) int {
-	return ParseStringToInt(s)
-}
-
-func parseUint(s string) uint {
-	return ParseStringToUint(s)
-}
